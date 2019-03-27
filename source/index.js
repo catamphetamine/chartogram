@@ -712,7 +712,7 @@ export default function chartogram(rootNode, data, title = 'Title', options = {}
 		const xmlns = 'http://www.w3.org/2000/svg'
 		tooltipLine = document.createElementNS(xmlns, 'line')
 		tooltipLine.setAttributeNS(null, 'class', 'chartogram__tooltip-line')
-		canvas.appendChild(tooltipLine)
+		canvas.insertBefore(tooltipLine, canvas.querySelector('polyline'))
 	}
 
 	function removeTooltipLine() {
