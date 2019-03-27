@@ -331,7 +331,7 @@
 	padding-left: 0.6em;
 	padding-right: 0.6em;
 	height: 100%;
-	cursor: col-resize;
+	cursor: ew-resize;
 	transition: background-color var(--chartogram-night-mode-transition-duration);
 }
 
