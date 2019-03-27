@@ -6,6 +6,22 @@ Charts in JS with no dependencies.
 
 Originally created as part of [Telegram Charts Contest](https://t.me/contest/6).
 
+![]600
+
+## Screenshots
+
+### Day
+
+[View in full resolution](https://raw.githubusercontent.com/catamphetamine/chartogram/master/docs/day.png)
+
+<img src="https://raw.githubusercontent.com/catamphetamine/chartogram/master/docs/day@512x984.png" width="512" height="984"/>
+
+### Night
+
+[View in full resolution](https://raw.githubusercontent.com/catamphetamine/chanchan/master/docs/images/night.png)
+
+<img src="https://raw.githubusercontent.com/catamphetamine/chanchan/master/docs/images/night@512x984.png" width="512" height="984"/>
+
 ## Use
 
 ### Browser
