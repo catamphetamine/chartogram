@@ -29,6 +29,3 @@ npm-debug.log
 
 # browser builds
 /bundle/
-
-# Demo page
-/demo/
