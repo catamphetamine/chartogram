@@ -35,6 +35,7 @@ export default function chartogram(rootNode, data, title = 'Title', options = {}
 
 	const GAUGE_TICK_MARKS_COUNT = options.gaugeMarkTicksCount || 6
 	const TIMELINE_WINDOW_SIZE = options.timelineWindowSize || 40
+	const TIMELINE_CHART_MAX_POINTS = options.timelineChartMaxPoints || 80
 
 	const MONTHS = options.months || [
 		'Jan',
@@ -308,14 +309,52 @@ export default function chartogram(rootNode, data, title = 'Title', options = {}
 		yAxis.style.height = `${100 / yAxisScale}%`
 	}
 
+	function simplifyGraph(x, y, maxPoints, yMax = Math.max(...y), threshold = 0.025, i = 0, _x = new Array(x.length), _y = new Array(x.length), _i = 0) {
+		if (i + 2 > x.length - 1) {
+			while (i < y.length) {
+				_x[_i] = x[i]
+				_y[_i] = y[i]
+				_i++
+				i++
+			}
+			_x = _x.slice(0, _i)
+			_y = _y.slice(0, _i)
+			if (_x.length <= maxPoints) {
+				return [_x, _y]
+			} else {
+				if (x.length / _x.length < 1.1) {
+					threshold = Math.min(threshold + 0.025, 1)
+				}
+				return simplifyGraph(_x, _y, maxPoints, yMax, threshold)
+			}
+		}
+		const y0 = (y[i + 2] + y[i]) / 2
+		if (Math.abs(y0 - y[i + 1]) / yMax < threshold) {
+			_x[_i] = x[i]
+			_x[_i + 1] = x[i + 2]
+			_y[_i] = y[i]
+			_y[_i + 1] = y[i + 2]
+			return simplifyGraph(x, y, maxPoints, yMax, threshold, i + 2, _x, _y, _i + 1)
+		} else {
+			_x[_i] = x[i]
+			_x[_i + 1] = x[i + 1]
+			_x[_i + 2] = x[i + 2]
+			_y[_i] = y[i]
+			_y[_i + 1] = y[i + 1]
+			_y[_i + 2] = y[i + 2]
+			return simplifyGraph(x, y, maxPoints, yMax, threshold, i + 2, _x, _y, _i + 2)
+		}
+	}
+
 	function drawTimeline(graphs, x, minX, maxX, minY, maxY) {
 		clearElement(timelineCanvas)
 		// Set canvas `viewBox`.
 		timelineCanvas.setAttribute('viewBox', `${minX} ${minY} ${maxX - minX} ${maxY - minY}`)
 		for (const { id, color, points } of graphs) {
+			const [_x, _y] = simplifyGraph(x, points, TIMELINE_CHART_MAX_POINTS)
 			const graph = document.createElement('polyline')
 			graph.setAttribute('stroke', color)
-			graph.setAttribute('points', commaJoin(x, points.map(y => (maxY - minY) - y)).join(' '))
+			graph.setAttribute('points', commaJoin(_x, _y.map(y => (maxY - minY) - y)).join(' '))
 			graph.classList.add('chartogram__graph')
 			timelineCanvas.appendChild(graph)
 		}
