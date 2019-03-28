@@ -164,7 +164,7 @@ export default function chartogram(rootNode, data, title = 'Title', options = {}
 	// Reducing timestamps to lower numbers to work around that bug.
 	function normalizeDataPoints() {
 		normalizePoints([data.x])
-		normalizePoints(data.lines)
+		normalizePoints(data.y)
 	}
 
 	function normalizePoints(all) {
@@ -201,8 +201,8 @@ export default function chartogram(rootNode, data, title = 'Title', options = {}
 
 	function displayGraphs() {
 		showGraphs = {}
-		for (const line of data.lines) {
-			showGraphs[line.id] = true
+		for (const y of data.y) {
+			showGraphs[y.id] = true
 		}
 		showGraphsNext = undefined
 		if (data.x.points.length > TIMELINE_WINDOW_SIZE) {
@@ -220,8 +220,8 @@ export default function chartogram(rootNode, data, title = 'Title', options = {}
 		// Add graph togglers.
 		const graphTogglers = document.querySelector('.chartogram__chart-togglers')
 		clearElement(graphTogglers)
-		for (const line of data.lines) {
-			graphTogglers.appendChild(createGraphToggler(line))
+		for (const y of data.y) {
+			graphTogglers.appendChild(createGraphToggler(y))
 		}
 	}
 
@@ -249,23 +249,23 @@ export default function chartogram(rootNode, data, title = 'Title', options = {}
 		const minY = 0
 		let maxY = -Infinity
 		timelineWindowGraphs = []
-		for (const line of data.lines) {
-			if (!showGraphs[line.id]) {
+		for (const y of data.y) {
+			if (!showGraphs[y.id]) {
 				continue
 			}
-			const points = line.points.slice(minXIndex, maxXIndex + 1)
+			const points = y.points.slice(minXIndex, maxXIndex + 1)
 			// Min Y is always 0 by design.
 			const min = 0
 			// const min = Math.min(...points)
 			const max = Math.max(...points)
 			timelineWindowGraphs.push({
-				...line,
+				...y,
 				points,
 				min,
 				max,
 				normalized: {
-					...line.normalized,
-					points: line.normalized.points.slice(minXIndex, maxXIndex + 1)
+					...y.normalized,
+					points: y.normalized.points.slice(minXIndex, maxXIndex + 1)
 				}
 			})
 			// minY = Math.min(minY, ...points)
@@ -274,8 +274,8 @@ export default function chartogram(rootNode, data, title = 'Title', options = {}
 		// Set canvas `viewBox`.
 		const minXNormalized = (minX - data.x.normalized.shift) / data.x.normalized.scale
 		const maxXNormalized = (maxX - data.x.normalized.shift) / data.x.normalized.scale
-		const minYNormalized = (minY - data.lines[0].normalized.shift) / data.lines[0].normalized.scale
-		const maxYNormalized = (maxY - data.lines[0].normalized.shift) / data.lines[0].normalized.scale
+		const minYNormalized = (minY - data.y[0].normalized.shift) / data.y[0].normalized.scale
+		const maxYNormalized = (maxY - data.y[0].normalized.shift) / data.y[0].normalized.scale
 		canvas.setAttribute('viewBox', `${minXNormalized} ${minYNormalized} ${maxXNormalized - minXNormalized} ${maxYNormalized - minYNormalized}`)
 		// Calculate grid lines' coordinates.
 		const minY_ = 0
@@ -285,7 +285,7 @@ export default function chartogram(rootNode, data, title = 'Title', options = {}
 		// Draw grid lines.
 		for (const y of yAxisTickMarks) {
 			canvas.appendChild(createGridLine(
-				(y - data.lines[0].normalized.shift) / data.lines[0].normalized.scale,
+				(y - data.y[0].normalized.shift) / data.y[0].normalized.scale,
 				minXNormalized,
 				maxXNormalized,
 				minYNormalized,
@@ -413,7 +413,7 @@ export default function chartogram(rootNode, data, title = 'Title', options = {}
 
 	function drawTimeline() {
 		const x = data.x.normalized.points
-		const graphs = data.lines.filter(_ => showGraphs[_.id])
+		const graphs = data.y.filter(_ => showGraphs[_.id])
 		const minX = 0
 		const maxX = 1
 		const minY = (Math.min(...graphs.map(_ => _.min)) - graphs[0].normalized.shift)  / graphs[0].normalized.scale
@@ -660,7 +660,7 @@ export default function chartogram(rootNode, data, title = 'Title', options = {}
 				let i = 0
 				while (2 * i < tooltipValues.childNodes.length) {
 					tooltipValues.childNodes[2 * i].textContent = timelineWindowGraphs[i].points[xIndex]
-					tooltipValues.childNodes[2 * i + 1].textContent = data.lines[i].name
+					tooltipValues.childNodes[2 * i + 1].textContent = data.y[i].name
 					i++
 				}
 				const xRatio = (x - timelineWindowMinX) / (timelineWindowMaxX - timelineWindowMinX)
@@ -748,15 +748,15 @@ export default function chartogram(rootNode, data, title = 'Title', options = {}
 		tooltipValues.classList.add('chartogram__tooltip-values')
 		tooltip.appendChild(tooltipValues)
 		// Add graph values.
-		for (const line of data.lines) {
-			if (showGraphs[line.id]) {
+		for (const y of data.y) {
+			if (showGraphs[y.id]) {
 				// Add graph value.
 				const tooltipValue = document.createElement('dt')
-				tooltipValue.style.color = line.color
+				tooltipValue.style.color = y.color
 				tooltipValues.appendChild(tooltipValue)
 				// Add graph name.
 				const tooltipName = document.createElement('dd')
-				tooltipName.style.color = line.color
+				tooltipName.style.color = y.color
 				tooltipValues.appendChild(tooltipName)
 			}
 		}

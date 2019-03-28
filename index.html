@@ -221,7 +221,7 @@
 
 			function drawChartogram() {
 				const data = {
-					lines: []
+					y: []
 				}
 				for (const column of DATA[selectedDatasetId].columns) {
 					const id = column[0]
@@ -233,7 +233,7 @@
 							}
 							break
 						case 'line':
-							data.lines.push({
+							data.y.push({
 								id,
 								points: column.slice(1),
 								name: DATA[selectedDatasetId].names[id],
