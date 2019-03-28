@@ -22,9 +22,67 @@ Originally created as part of [Telegram Charts Contest](https://t.me/contest/6).
 
 ## Use
 
+The default exported function takes three arguments:
+
+* The DOM element where the chart will be rendered.
+* Chart data.
+* Chart title.
+
+Chart data must have shape:
+
+```js
+{
+  x: {
+    points: Number[]
+  },
+  y: {
+    id: string,
+    name: string,
+    points: Number[]
+  }[]
+}
+```
+
+So there must be a single `x` and one or more `y`s.
+
+Example:
+
+```js
+{
+  x: {
+    points: [
+      1553769000,
+      1553770000,
+      1553771000
+    ]
+  },
+  y: [
+    {
+      id: 'y1',
+      name: 'Temperature',
+      points: [
+        60,
+        69,
+        65
+      ]
+    },
+    {
+      id: 'y2',
+      name: 'CPU load',
+      points: [
+        95,
+        98,
+        90
+      ]
+    }
+  ]
+}
+```
+
 ### Browser
 
 ```html
+<!DOCTYPE html>
 <html>
   <head>
     <script src="https://unpkg.com/chartogram@[version]/bundle/chartogram.js"></script>
@@ -34,7 +92,7 @@ Originally created as part of [Telegram Charts Contest](https://t.me/contest/6).
   <body>
     <section id="chart"></section>
     <script>
-      chartogram(document.getElementById('chart'))
+      chartogram(document.getElementById('chart'), data, 'Title')
     </script>
   </body>
 </html>
@@ -50,14 +108,30 @@ npm install chartogram --save
 
 ```js
 import React from 'react'
+import PropTypes from 'prop-types'
 import chartogram from 'chartogram'
 import 'chartogram/style.css'
 
 class Chartogram extends React.Component {
+  static propTypes = {
+    data: PropTypes.shape({
+      x: PropTypes.shape({
+        points: PropTypes.arrayOf(PropTypes.number).isRequired
+      }).isRequired,
+      y: PropTypes.arrayOf(PropTypes.shape({
+        id: PropTypes.string.isRequired,
+        name: PropTypes.string.isRequired,
+        points: PropTypes.arrayOf(PropTypes.number).isRequired
+      })).isRequired
+    }).isRequired,
+    title: PropTypes.string.isRequired
+  }
+
   node = React.createRef()
 
   componentDidMount() {
-    chartogram(this.node.current)
+    const { data, title } = this.props
+    chartogram(this.node.current, data, title)
   }
 
   componentWillUnmount() {
