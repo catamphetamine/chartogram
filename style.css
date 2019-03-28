@@ -120,7 +120,6 @@
 	position: relative;
 	display: flex;
 	flex-direction: column;
-	height: 25em;
 	font-size: var(--chartogram-font-size);
 }
 
@@ -132,6 +131,8 @@
 
 .chartogram__canvas {
 	width: 100%;
+	/* Firefox won't scale SVG correctly unless `height` is explicitly defined. */
+	height: 22em;
 	/* Don't crop graphs on canvas edges. */
 	/* Also don't crop the bottom-most grid line. */
 	overflow: visible;

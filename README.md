@@ -107,12 +107,8 @@ body {
 
 ## Browser compatibility
 
-Tested in Chrome and iOS Safari.
+Tested in Chrome, Firefox and iOS Safari.
 
-Mostly works in Firefox but SVG canvas drawing is buggy for some reason.
-
-Throws some syntax error in Edge.
-
-Won't support Internet Explorer.
+Won't work in Edge or Internet Explorer.
 
 The styles use [CSS variables](https://caniuse.com/#feat=css-variables) which work everywhere except Internet Explorer.
