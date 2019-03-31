@@ -127,6 +127,8 @@ export default class Chartogram {
 	}
 
 	componentWillUnmount() {
+		this.rootNode.classList.remove('chartogram')
+		clearElement(this.rootNode)
 		// Remove window resize event listener.
 		window.removeEventListener('resize', this.onResizeThrottled)
 	}

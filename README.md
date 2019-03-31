@@ -79,7 +79,7 @@ Example:
 }
 ```
 
-The default exported function returns another function which must be called in case of "destroying" the chart (it cleans up global event listeners).
+The default exported function returns another function which must be called in case of "destroying" the chart (it cleans up global event listeners and resets the DOM node).
 
 ### Browser
 
