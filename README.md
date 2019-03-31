@@ -79,6 +79,8 @@ Example:
 }
 ```
 
+The default exported function returns another function which must be called in case of "destroying" the chart (it cleans up global event listeners).
+
 ### Browser
 
 ```html
@@ -131,11 +133,11 @@ class Chartogram extends React.Component {
 
   componentDidMount() {
     const { data, title } = this.props
-    chartogram(this.node.current, data, title)
+    this.cleanUp = chartogram(this.node.current, data, title)
   }
 
   componentWillUnmount() {
-    // Can remove any global event listeners here.
+    this.cleanUp
   }
 
   render() {
@@ -183,6 +185,8 @@ body {
 
 Tested in Chrome, Firefox and iOS Safari.
 
-Won't work in Edge or Internet Explorer.
+Can work in Edge.
+
+For some reason doesn't show the SVG element in Internet Explorer.
 
 The styles use [CSS variables](https://caniuse.com/#feat=css-variables) which work everywhere except Internet Explorer.

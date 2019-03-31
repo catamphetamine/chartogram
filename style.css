@@ -40,10 +40,12 @@
 }
 
 .chartogram {
+	--chartogram-canvas-height: 22em;
 	--chartogram-background-color: white;
 	--chartogram-font-size: 16px;
-	--chartogram-stroke-width: 3px;
-	--chartogram-timeline-stroke-width: 2px;
+	--chartogram-stroke-width-bold: 3px;
+	--chartogram-stroke-width-normal: 2px;
+	--chartogram-stroke-width-light: 1px;
 	--chartogram-x-axis-labels-padding-top: 0.7em;
 	--chartogram-y-axis-labels-padding-bottom: 0.5em;
 	--chartogram-timeline-overlay-color: rgba(245,247,250,0.85);
@@ -52,7 +54,6 @@
 	--chartogram-content-color-lighter: #b0b0b0;
 	--chartogram-content-color-light: #dadada;
 	--chartogram-content-color-very-light: #f0f0f0;
-	--chartogram-content-color-lightest: #f5f5f5;
 	--chartogram-button-active-color: #f5f5f5;
 	--chartogram-tooltip-background-color: var(--chartogram-background-color);
 	--chartogram-night-mode-transition-duration: 300ms;
@@ -73,11 +74,10 @@
 	--chartogram-content-color-lighter: #546778;
 	--chartogram-content-color-light: #344658;
 	--chartogram-content-color-very-light: #313d4d;
-	--chartogram-content-color-lightest: #293544;
 	--chartogram-button-active-color: var(--chartogram-content-color-light);
 	--chartogram-timeline-overlay-color: rgba(31,45,63,0.72);
 	--chartogram-timeline-window-border-color: rgba(147,220,255,0.2);
-	--chartogram-tooltip-background-color: var(--chartogram-content-color-lightest);
+	--chartogram-tooltip-background-color: #293544;
 
 	color: var(--chartogram-content-color);
 }
@@ -131,8 +131,7 @@
 
 .chartogram__canvas {
 	width: 100%;
-	/* Firefox won't scale SVG correctly unless `height` is explicitly defined. */
-	height: 22em;
+	height: var(--chartogram-canvas-height);
 	/* Don't crop graphs on canvas edges. */
 	/* Also don't crop the bottom-most grid line. */
 	overflow: visible;
@@ -183,12 +182,11 @@
 }
 
 .chartogram__graph {
-	stroke-width: var(--chartogram-stroke-width);
+	stroke-width: var(--chartogram-stroke-width-bold);
 	/* `vector-effect` fixes `stroke-width` to be in screen pixels. */
 	/* (instead of <svg/> `viewBox` units) */
-	/* `vector-effect` is not supported in Edge and IE. */
-	/* But for demo purposes it will suffice. */
-	/* Can be replaced with scaling `stroke-width` relative to viewport width. */
+	/* `vector-effect` is not supported in Edge and IE but */
+	/* it's purely a presentational tweak and doesn't affect operation. */
 	vector-effect: non-scaling-stroke;
 	stroke-linejoin: round;
 	stroke-linecap: round;
@@ -196,14 +194,13 @@
 }
 
 .chartogram__grid-line {
-	stroke: var(--chartogram-content-color-lightest);
+	stroke: var(--chartogram-content-color-very-light);
 	transition: stroke var(--chartogram-night-mode-transition-duration);
-	stroke-width: var(--chartogram-timeline-stroke-width);
+	stroke-width: var(--chartogram-stroke-width-light);
 	/* `vector-effect` fixes `stroke-width` to be in screen pixels. */
 	/* (instead of <svg/> `viewBox` units) */
-	/* `vector-effect` is not supported in Edge and IE. */
-	/* But for demo purposes it will suffice. */
-	/* Can be replaced with scaling `stroke-width` relative to viewport width. */
+	/* `vector-effect` is not supported in Edge and IE but */
+	/* it's purely a presentational tweak and doesn't affect operation. */
 	vector-effect: non-scaling-stroke;
 }
 
@@ -265,9 +262,9 @@
 
 .chartogram__tooltip-point {
 	position: absolute;
-	width: calc(var(--chartogram-stroke-width) * 3);
-	height: calc(var(--chartogram-stroke-width) * 3);
-	box-shadow: 0 0 0 var(--chartogram-stroke-width) currentColor;
+	width: calc(var(--chartogram-stroke-width-bold) * 3);
+	height: calc(var(--chartogram-stroke-width-bold) * 3);
+	box-shadow: 0 0 0 var(--chartogram-stroke-width-bold) currentColor;
 	border-radius: 50%;
 	background-color: var(--chartogram-background-color);
 	transform: translateX(-50%) translateY(50%);
@@ -277,12 +274,11 @@
 
 .chartogram__tooltip-line {
 	stroke: var(--chartogram-content-color-light);
-	stroke-width: 1px;
+	stroke-width: var(--chartogram-stroke-width-light);
 	/* `vector-effect` fixes `stroke-width` to be in screen pixels. */
 	/* (instead of <svg/> `viewBox` units) */
-	/* `vector-effect` is not supported in Edge and IE. */
-	/* But for demo purposes it will suffice. */
-	/* Can be replaced with scaling `stroke-width` relative to viewport width. */
+	/* `vector-effect` is not supported in Edge and IE but */
+	/* it's purely a presentational tweak and doesn't affect operation. */
 	vector-effect: non-scaling-stroke;
 }
 
@@ -371,7 +367,7 @@
 }
 
 .chartogram__timeline-canvas .chartogram__graph {
-	stroke-width: var(--chartogram-timeline-stroke-width);
+	stroke-width: var(--chartogram-stroke-width-normal);
 }
 
 .chartogram__chart-togglers {

@@ -201,6 +201,89 @@
 				}
 			}]
 		</script>
+
+		<script>
+			// Polyfill for testing Internet Explorer.
+			// https://tc39.github.io/ecma262/#sec-array.prototype.find
+			if (!Array.prototype.find) {
+			  Object.defineProperty(Array.prototype, 'find', {
+			    value: function(predicate) {
+			     // 1. Let O be ? ToObject(this value).
+			      if (this == null) {
+			        throw new TypeError('"this" is null or not defined');
+			      }
+
+			      var o = Object(this);
+
+			      // 2. Let len be ? ToLength(? Get(O, "length")).
+			      var len = o.length >>> 0;
+
+			      // 3. If IsCallable(predicate) is false, throw a TypeError exception.
+			      if (typeof predicate !== 'function') {
+			        throw new TypeError('predicate must be a function');
+			      }
+
+			      // 4. If thisArg was supplied, let T be thisArg; else let T be undefined.
+			      var thisArg = arguments[1];
+
+			      // 5. Let k be 0.
+			      var k = 0;
+
+			      // 6. Repeat, while k < len
+			      while (k < len) {
+			        // a. Let Pk be ! ToString(k).
+			        // b. Let kValue be ? Get(O, Pk).
+			        // c. Let testResult be ToBoolean(? Call(predicate, T, « kValue, k, O »)).
+			        // d. If testResult is true, return kValue.
+			        var kValue = o[k];
+			        if (predicate.call(thisArg, kValue, k, o)) {
+			          return kValue;
+			        }
+			        // e. Increase k by 1.
+			        k++;
+			      }
+
+			      // 7. Return undefined.
+			      return undefined;
+			    },
+			    configurable: true,
+			    writable: true
+			  });
+			}
+
+			// Polyfill for testing Internet Explorer.
+			if (!Array.prototype.findIndex) {
+			  Array.prototype.findIndex = function(predicate) {
+			    if (this == null) {
+			      throw new TypeError('Array.prototype.findIndex called on null or undefined');
+			    }
+			    if (typeof predicate !== 'function') {
+			      throw new TypeError('predicate must be a function');
+			    }
+			    var list = Object(this);
+			    var length = list.length >>> 0;
+			    var thisArg = arguments[1];
+			    var value;
+
+			    for (var i = 0; i < length; i++) {
+			      value = list[i];
+			      if (predicate.call(thisArg, value, i, list)) {
+			        return i;
+			      }
+			    }
+			    return -1;
+			  };
+			}
+		</script>
+
+		<style>
+			/* For testing Internet Explorer that doesn't support CSS variables. */
+			/*
+			.chartogram__canvas {
+				height: 22em;
+			}
+			*/
+		</style>
 	</head>
 
 	<body>
@@ -223,7 +306,9 @@
 				const data = {
 					y: []
 				}
-				for (const column of DATA[selectedDatasetId].columns) {
+				let i = 0
+				while (i < DATA[selectedDatasetId].columns.length) {
+					const column = DATA[selectedDatasetId].columns[i]
 					const id = column[0]
 					switch (DATA[selectedDatasetId].types[id]) {
 						case 'x':
@@ -234,15 +319,16 @@
 							break
 						case 'line':
 							data.y.push({
-								id,
+								id: id,
 								points: column.slice(1),
 								name: DATA[selectedDatasetId].names[id],
 								color: DATA[selectedDatasetId].colors[id]
 							})
 							break
 						default:
-							throw new Error(`Unknown chart data type: ${DATA[selectedDatasetId].types[id]}`)
+							throw new Error('Unknown chart data type: ' + DATA[selectedDatasetId].types[id])
 					}
+					i++
 				}
 				chartogram(chartogramNode, data, 'Followers')
 			}
@@ -253,17 +339,19 @@
 
 			function setUpDatasetSelector() {
 				const datasetSelector = document.getElementById('dataset-selector')
-				const options = DATA.map((data, i) => {
+				const options = DATA.map(function (data, i) {
 					const option = document.createElement('option')
 					option.value = i
 					option.selected = i === 0
 					option.appendChild(document.createTextNode(i))
 					return option
 				})
-				for (const option of options) {
-					datasetSelector.appendChild(option)
+				let i = 0
+				while (i < options.length) {
+					datasetSelector.appendChild(options[i])
+					i++
 				}
-				datasetSelector.addEventListener('change', () => {
+				datasetSelector.addEventListener('change', function() {
 					selectedDatasetId = datasetSelector.value
 					drawChartogram()
 				})
@@ -272,10 +360,10 @@
 			function setUpNightModeSwitch() {
 				const nightModeSwitch = document.querySelector('#night-mode-switch')
 				function setText() {
-					nightModeSwitch.textContent = `Switch to ${nightMode ? 'Day' : 'Night'} Mode`
+					nightModeSwitch.textContent = 'Switch to ' + (nightMode ? 'Day' : 'Night') + ' Mode'
 				}
 				let nightMode = false
-				nightModeSwitch.addEventListener('click', () => {
+				nightModeSwitch.addEventListener('click', function() {
 					nightMode = !nightMode
 					document.body.classList.toggle('night-mode')
 					chartogramNode.classList.toggle('chartogram--night-mode')
