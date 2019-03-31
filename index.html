@@ -6,439 +6,12 @@
 		<!-- Fix document width for mobile devices. -->
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-		<style>
-			/* Must come before any button styles. */
-			/* Copy-pasted (and edited) from: */
-			/* https://gist.github.com/MoOx/9137295 */
-			.chartogram__reset-button {
-				border: none;
-				margin: 0;
-				padding: 0;
-				width: auto;
-				overflow: visible;
-				background: transparent;
+		<title>Chartogram Demo</title>
 
-				outline: none;
-				cursor: pointer;
+		<script src="./bundle/chartogram.js"></script>
 
-				/* inherit font & color from ancestor */
-				color: inherit;
-				font: inherit;
-
-				/* Normalize `line-height`. Cannot be changed from `normal` in Firefox 4+. */
-				line-height: normal;
-
-				/* Corrects font smoothing for webkit */
-				-webkit-font-smoothing: inherit;
-				-moz-osx-font-smoothing: inherit;
-
-				/* Corrects inability to style clickable `input` types in iOS */
-				-webkit-appearance: none;
-
-				/* Removes iOS Safari blue highlight on tap. */
-				-webkit-tap-highlight-color:  rgba(255, 255, 255, 0);
-
-				/* Disable "double tap to zoom" in iOS Safari. */
-				touch-action: manipulation;
-			}
-
-			/* Remove excess padding and border in Firefox 4+ */
-			.chartogram__reset-button::-moz-focus-inner {
-				border: 0;
-				padding: 0;
-			}
-
-			.chartogram {
-				--chartogram-canvas-height: 22em;
-				--chartogram-background-color: white;
-				--chartogram-font-size: 16px;
-				--chartogram-stroke-width-bold: 3px;
-				--chartogram-stroke-width-normal: 2px;
-				--chartogram-stroke-width-light: 1px;
-				--chartogram-x-axis-labels-padding-top: 0.7em;
-				--chartogram-y-axis-labels-padding-bottom: 0.5em;
-				--chartogram-timeline-overlay-color: rgba(245,247,250,0.85);
-				--chartogram-timeline-window-border-color: rgba(0,106,146,0.12);
-				--chartogram-content-color: inherit;
-				--chartogram-content-color-lighter: #b0b0b0;
-				--chartogram-content-color-light: #dadada;
-				--chartogram-content-color-very-light: #f0f0f0;
-				--chartogram-content-color-lightest: #f5f5f5;
-				--chartogram-button-active-color: #f5f5f5;
-				--chartogram-tooltip-background-color: var(--chartogram-background-color);
-				--chartogram-night-mode-transition-duration: 300ms;
-
-				/* Prevents text selection when clicking and dragging the timeline window. */
-				-webkit-user-select: none;
-				-khtml-user-select: none;
-				-moz-user-select: none;
-				-o-user-select: none;
-				user-select: none;
-
-				font-size: var(--chartogram-font-size);
-			}
-
-			.chartogram--night-mode {
-				--chartogram-background-color: rgb(36,47,62);
-				--chartogram-content-color: white;
-				--chartogram-content-color-lighter: #546778;
-				--chartogram-content-color-light: #344658;
-				--chartogram-content-color-very-light: #313d4d;
-				--chartogram-content-color-lightest: #293544;
-				--chartogram-button-active-color: var(--chartogram-content-color-light);
-				--chartogram-timeline-overlay-color: rgba(31,45,63,0.72);
-				--chartogram-timeline-window-border-color: rgba(147,220,255,0.2);
-				--chartogram-tooltip-background-color: var(--chartogram-content-color-lightest);
-
-				color: var(--chartogram-content-color);
-			}
-
-			.chartogram__top-border {
-				width: 100%;
-				height: 0.85em;
-				margin-bottom: calc(0.85em + 1em);
-				transition: all var(--chartogram-night-mode-transition-duration);
-				/* Gradients don't support transitions. */
-				background-color: var(--chartogram-background-color);
-				/* Using `rgba(255,255,255,0)` instead of `transparent` to work around Safari bug. */
-				/*background-image: linear-gradient(var(--chartogram-background-color), var(--chartogram-background-color-transparent));*/
-			}
-
-			.chartogram__header {
-				display: flex;
-				justify-content: space-between;
-				align-items: center;
-			}
-
-			.chartogram__title {
-				margin: 0;
-				padding-left: 0.25em;
-				font-size: 145%;
-				transition: all var(--chartogram-night-mode-transition-duration);
-			}
-
-			.chartogram__plan-container {
-				/* For tooltip. */
-				position: relative;
-			}
-
-			.chartogram__plan-with-axes {
-				/* Padding bottom added for the X axis labels. */
-				padding-bottom: calc(var(--chartogram-x-axis-labels-padding-top) + var(--chartogram-font-size));
-			}
-
-			.chartogram__plan {
-				position: relative;
-				display: flex;
-				flex-direction: column;
-				font-size: var(--chartogram-font-size);
-			}
-
-			.chartogram__canvas-wrapper {
-				position: relative;
-				display: flex;
-				flex: 1;
-			}
-
-			.chartogram__canvas {
-				width: 100%;
-				height: var(--chartogram-canvas-height);
-				/* Don't crop graphs on canvas edges. */
-				/* Also don't crop the bottom-most grid line. */
-				overflow: visible;
-				/* Prevent the web browser from handling this touch event. */
-				/* https://developer.mozilla.org/en-US/docs/Web/CSS/touch-action */
-				/* iOS Safari only supports `none` and `manipulation`. */
-				/* https://caniuse.com/#search=touch-action */
-				touch-action: none;
-				touch-action: pan-y pinch-zoom;
-			}
-
-			.chartogram__x, .chartogram__y {
-				color: var(--chartogram-content-color-lighter);
-				transition: color var(--chartogram-night-mode-transition-duration);
-			}
-
-			.chartogram__y {
-				position: absolute;
-				left: 0;
-				bottom: var(--chartogram-y-axis-labels-padding-bottom);
-				height: 100%;
-				line-height: 1em;
-				display: flex;
-				justify-content: space-between;
-				flex-direction: column-reverse;
-				/* So that hovering the Y axis doesn't result in 'pointerleave' event on canvas. */
-				pointer-events: none;
-			}
-
-			.chartogram__y-wrapper {
-				position: absolute;
-				left: 0;
-				top: -1em;
-				height: calc(100% + 1em);
-			}
-
-			.chartogram__x {
-				position: absolute;
-				left: 0;
-				right: 0;
-				top: 100%;
-				display: flex;
-				justify-content: space-between;
-				padding-top: var(--chartogram-x-axis-labels-padding-top);
-				padding-left: 0.7em;
-				padding-right: 0.7em;
-				line-height: 1em
-			}
-
-			.chartogram__graph {
-				stroke-width: var(--chartogram-stroke-width-bold);
-				/* `vector-effect` fixes `stroke-width` to be in screen pixels. */
-				/* (instead of <svg/> `viewBox` units) */
-				/* `vector-effect` is not supported in Edge and IE but */
-				/* it's purely a presentational tweak and doesn't affect operation. */
-				vector-effect: non-scaling-stroke;
-				stroke-linejoin: round;
-				stroke-linecap: round;
-				fill: none;
-			}
-
-			.chartogram__grid-line {
-				stroke: var(--chartogram-content-color-lightest);
-				transition: stroke var(--chartogram-night-mode-transition-duration);
-				stroke-width: var(--chartogram-stroke-width-light);
-				/* `vector-effect` fixes `stroke-width` to be in screen pixels. */
-				/* (instead of <svg/> `viewBox` units) */
-				/* `vector-effect` is not supported in Edge and IE but */
-				/* it's purely a presentational tweak and doesn't affect operation. */
-				vector-effect: non-scaling-stroke;
-			}
-
-			.chartogram__grid-line:first-child {
-				stroke: var(--chartogram-content-color-very-light);
-			}
-
-			.chartogram__tooltip {
-				position: absolute;
-				display: flex;
-				align-items: center;
-				flex-direction: column;
-				border-radius: 0.35em;
-				padding-top: 0.6em;
-				padding-bottom: 0.5em;
-				padding-left: 0.85em;
-				padding-right: 0.85em;
-				box-shadow: 0 1px 0.2em rgba(0,0,0,0.18);
-				background-color: var(--chartogram-tooltip-background-color);
-				transform: translateX(-50%);
-				z-index: 1;
-				/* So that hovering it doesn't result in 'pointerleave' event on canvas. */
-				pointer-events: none;
-			}
-
-			.chartogram__tooltip-header {
-				font-weight: bolder;
-				font-size: 110%;
-				text-align: center;
-				margin-top: 0;
-				margin-bottom: 0.8em;
-				white-space: nowrap;
-			}
-
-			.chartogram__tooltip-values {
-				display: inline-grid;
-				max-height: 3em;
-				margin: 0;
-				grid-template-rows: auto auto;
-				grid-auto-flow: column;
-				column-gap: 1.5em;
-			}
-
-			.chartogram__tooltip-values dt {
-				font-weight: bolder;
-				font-size: 125%;
-			}
-
-			.chartogram__tooltip-values dd {
-				margin-left: 0;
-				margin-top: 0.25em;
-			}
-
-			.chartogram__tooltip-values dt,
-			.chartogram__tooltip-values dd {
-				line-height: 1em;
-				grid-column: span 1;
-			}
-
-			.chartogram__tooltip-point {
-				position: absolute;
-				width: calc(var(--chartogram-stroke-width-bold) * 3);
-				height: calc(var(--chartogram-stroke-width-bold) * 3);
-				box-shadow: 0 0 0 var(--chartogram-stroke-width-bold) currentColor;
-				border-radius: 50%;
-				background-color: var(--chartogram-background-color);
-				transform: translateX(-50%) translateY(50%);
-				/* So that hovering it doesn't result in 'pointerleave' event on canvas. */
-				pointer-events: none;
-			}
-
-			.chartogram__tooltip-line {
-				stroke: var(--chartogram-content-color-light);
-				stroke-width: var(--chartogram-stroke-width-light);
-				/* `vector-effect` fixes `stroke-width` to be in screen pixels. */
-				/* (instead of <svg/> `viewBox` units) */
-				/* `vector-effect` is not supported in Edge and IE but */
-				/* it's purely a presentational tweak and doesn't affect operation. */
-				vector-effect: non-scaling-stroke;
-			}
-
-			.chartogram__timeline {
-				position: relative;
-				height: 3.6em;
-				margin-top: 1.5em;
-				/* Prevent the web browser from handling this touch event. */
-				/* https://developer.mozilla.org/en-US/docs/Web/CSS/touch-action */
-				/* iOS Safari only supports `none` and `manipulation`. */
-				/* https://caniuse.com/#search=touch-action */
-				touch-action: none;
-				touch-action: pan-y pinch-zoom;
-			}
-
-			.chartogram__timeline-overlay-left,
-			.chartogram__timeline-overlay-right {
-				position: absolute;
-				left: 0;
-				right: 0;
-				height: 100%;
-				background-color: var(--chartogram-timeline-overlay-color);
-				transition: background-color var(--chartogram-night-mode-transition-duration);
-			}
-
-			.chartogram__timeline-window {
-				position: absolute;
-				left: 0;
-				right: 0;
-				height: 100%;
-				transition: border-color var(--chartogram-night-mode-transition-duration);
-				border: 1px solid var(--chartogram-timeline-window-border-color);
-				border-left-width: 0.4em;
-				border-right-width: 0.4em;
-				box-sizing: border-box;
-			}
-
-			.chartogram__timeline-window__drag {
-				position: absolute;
-				width: 100%;
-				height: 100%;
-			}
-
-			.chartogram__timeline-window__left-handle,
-			.chartogram__timeline-window__right-handle {
-				position: absolute;
-				padding-left: 0.6em;
-				padding-right: 0.6em;
-				height: 100%;
-				cursor: ew-resize;
-				transition: background-color var(--chartogram-night-mode-transition-duration);
-			}
-
-			.chartogram__timeline-window__left-handle {
-				left: calc(-1 * 0.4em / 2 - 0.6em);
-			}
-
-			.chartogram__timeline-window__right-handle {
-				right: calc(-1 * 0.4em / 2 - 0.6em);
-			}
-
-			.chartogram__timeline-window__drag {
-				cursor: grab;
-			}
-
-			.chartogram__timeline-window__drag:active {
-				cursor: grabbing;
-			}
-
-			.chartogram__timeline-canvas-padding {
-				position: absolute;
-				width: 100%;
-				height: 100%;
-				padding-top: 3px;
-				padding-bottom: 3px;
-				box-sizing: border-box;
-				/* Crop timeline graph on left and right sides. */
-				overflow: hidden;
-			}
-
-			.chartogram__timeline-canvas {
-				width: 100%;
-				height: 100%;
-				/* Don't crop timeline graph on top and bottom. */
-				overflow: visible;
-			}
-
-			.chartogram__timeline-canvas .chartogram__graph {
-				stroke-width: var(--chartogram-stroke-width-normal);
-			}
-
-			.chartogram__chart-togglers {
-				display: flex;
-				flex-wrap: wrap;
-			}
-
-			.chartogram__chart-toggler {
-				display: flex;
-				align-items: center;
-				height: 2.3em;
-				margin-top: 1.5em;
-				line-height: 0;
-				padding-left: 0.5em;
-				padding-right: 0.8em;
-				margin-right: 1em;
-				border-radius: 1.1em;
-				box-shadow: 0 0 2px var(--chartogram-content-color-lighter);
-				font-family: inherit;
-				font-size: 140%;
-				transition: color var(--chartogram-night-mode-transition-duration), box-shadow var(--chartogram-night-mode-transition-duration);;
-			}
-
-			.chartogram__chart-toggler:last-child {
-				margin-right: 0;
-			}
-
-			.chartogram__chart-toggler:active {
-				background-color: var(--chartogram-button-active-color);
-			}
-
-			.chartogram__chart-toggler-check {
-				width: 1.4em;
-				height: 1.4em;
-				margin-right: 0.7em;
-			}
-
-			.chartogram__chart-toggler-check-mark,
-			.chartogram__chart-toggler-check-circle {
-				transition: transform 150ms, fill var(--chartogram-night-mode-transition-duration);
-				transform-origin: center center;
-			}
-
-			.chartogram__chart-toggler-check-mark {
-				transform: scale(0);
-			}
-
-			.chartogram__chart-toggler-check-circle {
-				transform: scale(1);
-				fill: var(--chartogram-background-color);
-			}
-
-			.chartogram__chart-toggler--on .chartogram__chart-toggler-check-mark {
-				transform: scale(1);
-			}
-
-			.chartogram__chart-toggler--on .chartogram__chart-toggler-check-circle {
-				transform: scale(0);
-			}
-		</style>
+		<!-- Styles for the component. -->
+		<link rel="stylesheet" href="./style.css"/>
 
 		<style>
 			body {
@@ -630,11 +203,95 @@
 		</script>
 
 		<script>
+			// Polyfill for testing Internet Explorer.
+			// https://tc39.github.io/ecma262/#sec-array.prototype.find
+			if (!Array.prototype.find) {
+			  Object.defineProperty(Array.prototype, 'find', {
+			    value: function(predicate) {
+			     // 1. Let O be ? ToObject(this value).
+			      if (this == null) {
+			        throw new TypeError('"this" is null or not defined');
+			      }
+
+			      var o = Object(this);
+
+			      // 2. Let len be ? ToLength(? Get(O, "length")).
+			      var len = o.length >>> 0;
+
+			      // 3. If IsCallable(predicate) is false, throw a TypeError exception.
+			      if (typeof predicate !== 'function') {
+			        throw new TypeError('predicate must be a function');
+			      }
+
+			      // 4. If thisArg was supplied, let T be thisArg; else let T be undefined.
+			      var thisArg = arguments[1];
+
+			      // 5. Let k be 0.
+			      var k = 0;
+
+			      // 6. Repeat, while k < len
+			      while (k < len) {
+			        // a. Let Pk be ! ToString(k).
+			        // b. Let kValue be ? Get(O, Pk).
+			        // c. Let testResult be ToBoolean(? Call(predicate, T, « kValue, k, O »)).
+			        // d. If testResult is true, return kValue.
+			        var kValue = o[k];
+			        if (predicate.call(thisArg, kValue, k, o)) {
+			          return kValue;
+			        }
+			        // e. Increase k by 1.
+			        k++;
+			      }
+
+			      // 7. Return undefined.
+			      return undefined;
+			    },
+			    configurable: true,
+			    writable: true
+			  });
+			}
+
+			// Polyfill for testing Internet Explorer.
+			if (!Array.prototype.findIndex) {
+			  Array.prototype.findIndex = function(predicate) {
+			    if (this == null) {
+			      throw new TypeError('Array.prototype.findIndex called on null or undefined');
+			    }
+			    if (typeof predicate !== 'function') {
+			      throw new TypeError('predicate must be a function');
+			    }
+			    var list = Object(this);
+			    var length = list.length >>> 0;
+			    var thisArg = arguments[1];
+			    var value;
+
+			    for (var i = 0; i < length; i++) {
+			      value = list[i];
+			      if (predicate.call(thisArg, value, i, list)) {
+			        return i;
+			      }
+			    }
+			    return -1;
+			  };
+			}
 		</script>
+
+		<style>
+			/* For testing Internet Explorer that doesn't support CSS variables. */
+			/*
+			.chartogram__canvas {
+				height: 22em;
+			}
+			*/
+		</style>
 	</head>
+
 	<body>
+		<!-- http://tholman.com/github-corners/ -->
+		<a title="Go to GitHub repo" href="https://github.com/catamphetamine/chartogram" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+
 		<div id="dataset-selection">
-			Dataset:<select id="dataset-selector"></select>
+			Dataset: <select id="dataset-selector"></select>
 		</div>
 
 		<section id="chartogram"></section>
@@ -649,7 +306,9 @@
 				const data = {
 					y: []
 				}
-				for (const column of DATA[selectedDatasetId].columns) {
+				let i = 0
+				while (i < DATA[selectedDatasetId].columns.length) {
+					const column = DATA[selectedDatasetId].columns[i]
 					const id = column[0]
 					switch (DATA[selectedDatasetId].types[id]) {
 						case 'x':
@@ -660,17 +319,18 @@
 							break
 						case 'line':
 							data.y.push({
-								id,
+								id: id,
 								points: column.slice(1),
 								name: DATA[selectedDatasetId].names[id],
 								color: DATA[selectedDatasetId].colors[id]
 							})
 							break
 						default:
-							throw new Error(`Unknown chart data type: ${DATA[selectedDatasetId].types[id]}`)
+							throw new Error('Unknown chart data type: ' + DATA[selectedDatasetId].types[id])
 					}
+					i++
 				}
-				chartogram.call({}, chartogramNode, data, 'Followers')
+				chartogram(chartogramNode, data, 'Followers')
 			}
 
 			drawChartogram()
@@ -679,17 +339,19 @@
 
 			function setUpDatasetSelector() {
 				const datasetSelector = document.getElementById('dataset-selector')
-				const options = DATA.map((data, i) => {
+				const options = DATA.map(function (data, i) {
 					const option = document.createElement('option')
 					option.value = i
 					option.selected = i === 0
 					option.appendChild(document.createTextNode(i))
 					return option
 				})
-				for (const option of options) {
-					datasetSelector.appendChild(option)
+				let i = 0
+				while (i < options.length) {
+					datasetSelector.appendChild(options[i])
+					i++
 				}
-				datasetSelector.addEventListener('change', () => {
+				datasetSelector.addEventListener('change', function() {
 					selectedDatasetId = datasetSelector.value
 					drawChartogram()
 				})
@@ -698,946 +360,16 @@
 			function setUpNightModeSwitch() {
 				const nightModeSwitch = document.querySelector('#night-mode-switch')
 				function setText() {
-					nightModeSwitch.textContent = `Switch to ${nightMode ? 'Day' : 'Night'} Mode`
+					nightModeSwitch.textContent = 'Switch to ' + (nightMode ? 'Day' : 'Night') + ' Mode'
 				}
 				let nightMode = false
-				nightModeSwitch.addEventListener('click', () => {
+				nightModeSwitch.addEventListener('click', function() {
 					nightMode = !nightMode
 					document.body.classList.toggle('night-mode')
 					chartogramNode.classList.toggle('chartogram--night-mode')
 					setText()
 				})
 				setText()
-			}
-
-			// Utility.
-
-			function clearElement(element) {
-				while(element.firstChild) {
-					element.removeChild(element.firstChild)
-				}
-			}
-
-			function commaJoin(a, b) {
-				return a.map((ai, i) => `${ai},${b[i]}`)
-			}
-
-			function getLowerSiblingDivisibleBy(n, divider) {
-				n = Math.floor(n)
-				while (true) {
-					if (n < divider) {
-						return divider
-					}
-					if (n % divider === 0) {
-						return n
-					}
-					n--
-				}
-			}
-
-			function divideInterval(min, max, GAUGE_TICK_MARKS_COUNT) {
-				const points = new Array(GAUGE_TICK_MARKS_COUNT)
-				let i = 0
-				while (i < GAUGE_TICK_MARKS_COUNT) {
-					points[i] = min + i * (max - min) / (GAUGE_TICK_MARKS_COUNT - 1)
-					i++
-				}
-				return points
-			}
-
-			function renderGaugeLabels(element, min, max, GAUGE_TICK_MARKS_COUNT, transform) {
-				let i = 0
-				while (i < GAUGE_TICK_MARKS_COUNT) {
-					const tickMark = document.createElement('div')
-					let value = min + i * (max - min) / (GAUGE_TICK_MARKS_COUNT - 1)
-					if (transform) {
-						value = transform(value)
-					}
-					tickMark.appendChild(document.createTextNode(value))
-					element.appendChild(tickMark)
-					i++
-				}
-			}
-
-			function throttle(func, interval) {
-				let timeout
-				let executedAt = 0
-				let scheduled = function() {
-					timeout = undefined
-					executedAt = Date.now()
-					func()
-				}
-				return function() {
-					const now = Date.now()
-					const remaining = interval - (now - executedAt)
-					if (remaining <= 0) {
-						if (timeout) {
-							clearTimeout(timeout)
-							timeout = undefined
-						}
-						executedAt = now
-						func()
-					} else if (!timeout) {
-						timeout = setTimeout(scheduled, remaining)
-					}
-				}
-			}
-
-			function simplifyGraph(x, y, maxPoints, yMax = Math.max(...y), threshold = 0.025, i = 0, _x = new Array(x.length), _y = new Array(x.length), _i = 0) {
-				if (i + 2 > x.length - 1) {
-					while (i < y.length) {
-						_x[_i] = x[i]
-						_y[_i] = y[i]
-						_i++
-						i++
-					}
-					_x = _x.slice(0, _i)
-					_y = _y.slice(0, _i)
-					if (_x.length <= maxPoints) {
-						return [_x, _y]
-					} else {
-						if (x.length / _x.length < 1.1) {
-							threshold = Math.min(threshold + 0.025, 1)
-						}
-						return simplifyGraph(_x, _y, maxPoints, yMax, threshold)
-					}
-				}
-				const y0 = (y[i + 2] + y[i]) / 2
-				if (Math.abs(y0 - y[i + 1]) / yMax < threshold) {
-					_x[_i] = x[i]
-					_x[_i + 1] = x[i + 2]
-					_y[_i] = y[i]
-					_y[_i + 1] = y[i + 2]
-					return simplifyGraph(x, y, maxPoints, yMax, threshold, i + 2, _x, _y, _i + 1)
-				} else {
-					_x[_i] = x[i]
-					_x[_i + 1] = x[i + 1]
-					_x[_i + 2] = x[i + 2]
-					_y[_i] = y[i]
-					_y[_i + 1] = y[i + 1]
-					_y[_i + 2] = y[i + 2]
-					return simplifyGraph(x, y, maxPoints, yMax, threshold, i + 2, _x, _y, _i + 2)
-				}
-			}
-
-			function setUpDrag(element, onDragStart, onDrag) {
-				function onTouchMove(event) {
-					onDrag(
-						event.changedTouches[0].clientX,
-						event.changedTouches[0].clientY
-					)
-				}
-				function onPointerMove(event) {
-					onDrag(event.clientX, event.clientY)
-				}
-				function onDragStop() {
-					window.removeEventListener('pointermove', onPointerMove)
-					window.removeEventListener('touchmove', onTouchMove)
-					window.removeEventListener('pointerup', onDragStop)
-					window.removeEventListener('pointercancel', onDragStop)
-					window.removeEventListener('touchend', onDragStop)
-					window.removeEventListener('touchcancel', onDragStop)
-				}
-				function onTouchStart(event) {
-					// Ignore multitouch.
-					if (event.touches.length > 1) {
-						// Reset.
-						return onDragStop()
-					}
-					onDragStart(
-						event.changedTouches[0].clientX,
-						event.changedTouches[0].clientY
-					)
-					window.addEventListener('touchmove', onTouchMove)
-					window.addEventListener('touchend', onDragStop)
-					window.addEventListener('touchcancel', onDragStop)
-				}
-				// Safari doesn't support pointer events.
-				// https://caniuse.com/#feat=pointer
-				element.addEventListener('touchstart', onTouchStart)
-				function onPointerDown(event) {
-					onDragStart(event.clientX, event.clientY)
-					window.addEventListener('pointermove', onPointerMove)
-					window.addEventListener('pointerup', onDragStop)
-					window.addEventListener('pointercancel', onDragStop)
-				}
-				element.addEventListener('pointerdown', onPointerDown)
-				return () => {
-					onDragStop()
-					element.removeEventListener(onPointerDown)
-					element.removeEventListener(onTouchStart)
-				}
-			}
-
-			function chartogram(rootNode, data, title, options) {
-
-				this.constructor = (rootNode, data, title = 'Title', options = {}) => {
-					rootNode.innerHTML = `
-						<header class="chartogram__header">
-							<h1 class="chartogram__title">${title}</h1>
-						</header>
-						<div class="chartogram__plan-with-axes">
-							<div class="chartogram__plan">
-								<div class="chartogram__top-border"></div>
-								<div class="chartogram__canvas-wrapper">
-									<svg class="chartogram__canvas" preserveAspectRatio="none"></svg>
-									<div class="chartogram__x"></div>
-									<div class="chartogram__y-wrapper">
-										<div class="chartogram__y"></div>
-									</div>
-								</div>
-							</div>
-						</div>
-						<div class="chartogram__timeline">
-							<div class="chartogram__timeline-canvas-padding">
-								<svg class="chartogram__timeline-canvas" preserveAspectRatio="none"></svg>
-							</div>
-							<div class="chartogram__timeline-overlay-left"></div>
-							<div class="chartogram__timeline-overlay-right"></div>
-							<div class="chartogram__timeline-window">
-								<button type="button" class="chartogram__reset-button chartogram__timeline-window__drag"></button>
-								<button type="button" class="chartogram__reset-button chartogram__timeline-window__left-handle"></button>
-								<button type="button" class="chartogram__reset-button chartogram__timeline-window__right-handle"></button>
-							</div>
-						</div>
-						<div class="chartogram__chart-togglers"></div>
-					`
-
-					rootNode.classList.add('chartogram')
-
-					this.props = {
-						gaugeTickMarksCount: 6,
-						timelineWindowSize: 40,
-						canvasWidth: 512,
-						precisionFactor: Math.pow(10, options.precision || 3),
-						months: [
-							'Jan',
-							'Feb',
-							'Mar',
-							'Apr',
-							'May',
-							'Jun',
-							'Jul',
-							'Aug',
-							'Sep',
-							'Oct',
-							'Nov',
-							'Dec'
-						],
-						weekdays: [
-							'Sun',
-							'Mon',
-							'Tue',
-							'Wed',
-							'Thu',
-							'Fri',
-							'Sat'
-						],
-						...options
-					}
-
-					this.tooltipContainer = document.querySelector('.chartogram__plan')
-					this.canvas = document.querySelector('.chartogram__canvas')
-					this.canvasWrapper = document.querySelector('.chartogram__canvas-wrapper')
-					this.xAxis = document.querySelector('.chartogram__x')
-					this.yAxis = document.querySelector('.chartogram__y')
-					this.timeline = document.querySelector('.chartogram__timeline')
-					this.timelineOverlayLeft = document.querySelector('.chartogram__timeline-overlay-left')
-					this.timelineWindowLeftHandle = document.querySelector('.chartogram__timeline-window__left-handle')
-					this.timelineWindow = document.querySelector('.chartogram__timeline-window')
-					this.timelineWindowDrag = document.querySelector('.chartogram__timeline-window__drag')
-					this.timelineWindowRightHandle = document.querySelector('.chartogram__timeline-window__right-handle')
-					this.timelineOverlayRight = document.querySelector('.chartogram__timeline-overlay-right')
-					this.timelineCanvas = document.querySelector('.chartogram__timeline-canvas')
-
-					this.setUpTimelineWindowHandle('left')
-					this.setUpTimelineWindowHandle('right')
-					this.setUpTimelineWindow()
-					this.setUpCanvasTooltipListener()
-
-					this.setData(data)
-					this.state = this.getInitialState()
-					this.updateTimelineBounds(this.state.fromRatio, this.state.toRatio)
-
-					// Add graph togglers.
-					const graphTogglers = document.querySelector('.chartogram__chart-togglers')
-					clearElement(graphTogglers)
-					for (const y of data.y) {
-						graphTogglers.appendChild(this.createGraphToggler(y))
-					}
-				}
-
-				this.componentDidMount = () => {
-					window.addEventListener('resize', this.onResizeThrottled)
-				}
-
-				this.componentWillUnmount = () => {
-					window.removeEventListener('resize', this.onResizeThrottled)
-				}
-
-				this.onResize = (event) => {
-					this.setState({
-						aspectRatio: this.getCanvasAspectRatio(),
-						timelineAspectRatio: this.getTimelineCanvasAspectRatio()
-					})
-				}
-
-				this.onResizeThrottled = throttle(this.onResize, 100)
-
-				this.getCanvasAspectRatio = () => {
-					const canvasDimensions = this.canvas.getBoundingClientRect()
-					return canvasDimensions.width / canvasDimensions.height
-				}
-
-				this.getTimelineCanvasAspectRatio = () => {
-					const timelineCanvasDimensions = this.timelineCanvas.getBoundingClientRect()
-					return timelineCanvasDimensions.width / timelineCanvasDimensions.height
-				}
-
-				this.setState = (newState, renderTimeline) => {
-					this.state = {
-						...this.state,
-						...newState
-					}
-					this.render(renderTimeline)
-				}
-
-				this.setData = (data) => {
-					this.data = {
-						...data,
-						minX: Math.min(...data.x.points),
-						maxX: Math.max(...data.x.points),
-						y: data.y.map(y => ({
-							...y,
-							min: Math.min(...y.points),
-							max: Math.max(...y.points)
-						}))
-					}
-				}
-
-				this.getInitialState = () => {
-					const { timelineWindowSize } = this.props
-					const { minX, maxX } = this.data
-					let fromIndex
-					if (this.data.x.points.length > timelineWindowSize) {
-						fromIndex = this.data.x.points.length - timelineWindowSize
-					} else {
-						fromIndex = 0
-					}
-					const xFrom = data.x.points[fromIndex]
-					const fromRatio = (xFrom - minX) / (maxX - minX)
-					const toRatio = 1
-					return {
-						...this.createState(fromRatio, toRatio),
-						aspectRatio: this.getCanvasAspectRatio(),
-						timelineAspectRatio: this.getTimelineCanvasAspectRatio(),
-						yScale: 1
-					}
-				}
-
-				this.createState = (fromRatio, toRatio) => {
-					const x = this.data.x
-					const minX = this.data.minX + fromRatio * (this.data.maxX - this.data.minX)
-					const maxX = this.data.minX + toRatio * (this.data.maxX - this.data.minX)
-					let fromIndex
-					if (minX === this.data.minX) {
-						fromIndex = 0
-					} else {
-						fromIndex = x.points.findIndex(x => x > minX) - 1
-					}
-					let toIndex
-					if (maxX === this.data.maxX) {
-						toIndex = x.points.length - 1
-					} else {
-						toIndex = x.points.findIndex(x => x > maxX)
-					}
-					const xPoints = x.points.slice(fromIndex, toIndex + 1)
-					const xGraphPoints = xPoints.slice()
-					// Create X graph points.
-					if (xPoints.length >= 2) {
-						if (x.points[fromIndex] !== minX) {
-							xGraphPoints[0] = minX
-						}
-						if (x.points[toIndex] !== maxX) {
-							xGraphPoints[xGraphPoints.length - 1] = maxX
-						}
-					}
-					const y = data.y.map((y, i) => {
-						const points = data.y[i].points.slice(fromIndex, toIndex + 1)
-						const graphPoints = points.slice()
-						if (xPoints.length >= 2) {
-							if (x.points[fromIndex] !== minX) {
-								const beforeStartY = data.y[i].points[fromIndex]
-								const startY = data.y[i].points[fromIndex + 1]
-								const fromXExcludedTickRatio = (minX - data.x.points[fromIndex]) / (data.x.points[fromIndex + 1] - data.x.points[fromIndex])
-								const startPoint = beforeStartY + (startY - beforeStartY) * fromXExcludedTickRatio
-								graphPoints[0] = startPoint
-							}
-							if (x.points[toIndex] !== maxX) {
-								const afterEndY = data.y[i].points[toIndex]
-								const endY = data.y[i].points[toIndex - 1]
-								const toXIncludedTickRatio = (maxX - data.x.points[toIndex - 1]) / (data.x.points[toIndex] - data.x.points[toIndex - 1])
-								const endPoint = endY + (afterEndY - endY) * toXIncludedTickRatio
-								graphPoints[graphPoints.length - 1] = endPoint
-							}
-						}
-						return {
-							...data.y[i],
-							...(this.state ? this.state.y[i] : { isShown: true }),
-							points,
-							graphPoints,
-							// Min Y is always 0 by design.
-							min: 0,
-							// min: Math.min(...graphPoints),
-							max: Math.max(...graphPoints)
-						}
-					})
-					return {
-						minX,
-						maxX,
-						fromIndex,
-						toIndex,
-						fromRatio,
-						toRatio,
-						xPoints,
-						xGraphPoints,
-						...this.calculateMinMaxY(y),
-						y
-					}
-				}
-
-				this.calculateMinMaxY = (y) => {
-					// Calculate timeline min/max Y for the graphs being shown.
-					let minY = Infinity
-					let maxY = -Infinity
-					for (const _y of y) {
-						if (_y.isShown) {
-							minY = Math.min(minY, _y.min)
-							maxY = Math.max(maxY, _y.max)
-						}
-					}
-					// Min Y is always 0 by design.
-					minY = 0
-					// Calculate global min/max Y for the graphs being shown.
-					let minYGlobal = Infinity
-					let maxYGlobal = -Infinity
-					for (const _y of this.data.y) {
-						const isShown = y.find(_ => _.id === _y.id).isShown
-						if (isShown) {
-							minYGlobal = Math.min(minYGlobal, _y.min)
-							maxYGlobal = Math.max(maxYGlobal, _y.max)
-						}
-					}
-					// Min Y is always 0 by design.
-					minYGlobal = 0
-					return {
-						minY,
-						maxY,
-						minYGlobal,
-						maxYGlobal
-					}
-				}
-
-				this.updateTimelineBounds = (from, to) => {
-					this.setTimelineWindowLeft(from)
-					this.setTimelineWindowRight(to)
-				}
-
-				this.updateBounds = (from, to) => {
-					this.updateTimelineBounds(from, to)
-					this.setState(this.createState(from, to), false)
-				}
-
-				this.createPolylinePoints = (x, y) => {
-					// return commaJoin(x, y)
-					return commaJoin(x.map(this.fixSvgCoordinate), y.map(this.fixSvgCoordinate))
-				}
-
-				// Firefox is buggy with too high and too fractional SVG coordinates.
-				this.fixSvgCoordinate = (x) => {
-					const { precisionFactor } = this.props
-					return Math.round(x * precisionFactor) / precisionFactor
-				}
-
-				this.mapX = (x) => {
-					const { canvasWidth } = this.props
-					const { minX, maxX } = this.state
-					return ((x - minX) / (maxX - minX)) * canvasWidth
-				}
-
-				this.mapY = (y) => {
-					const { canvasWidth } = this.props
-					const { minY, maxY, aspectRatio } = this.state
-					return ((y - minY) / (maxY - minY)) * canvasWidth / aspectRatio
-				}
-
-				this.mapXForTimeline = (x) => {
-					const { canvasWidth } = this.props
-					const { minX, maxX } = this.data
-					return ((x - minX) / (maxX - minX)) * canvasWidth
-				}
-
-				this.mapYForTimeline = (y) => {
-					const { canvasWidth } = this.props
-					const { minYGlobal, maxYGlobal, timelineAspectRatio } = this.state
-					return ((y - minYGlobal) / (maxYGlobal - minYGlobal)) * canvasWidth / timelineAspectRatio
-				}
-
-				this.render = (renderTimeline = true) => {
-					const { canvasWidth, gaugeTickMarksCount } = this.props
-					const { minX, maxX, minY, maxY, yScale, xGraphPoints, aspectRatio } = this.state
-					// Clear canvas.
-					clearElement(this.canvas)
-					// Set canvas `viewBox`.
-					this.canvas.setAttribute('viewBox', `0 0 ${canvasWidth} ${this.fixSvgCoordinate(canvasWidth / aspectRatio)}`)
-					// Calculate grid lines' coordinates.
-					const minY_ = minY
-					const maxY_ = getLowerSiblingDivisibleBy(maxY, 10)
-					const yAxisScale = (maxY - minY) / (maxY_ - minY_)
-					const yAxisTickMarks = divideInterval(minY_, maxY_, gaugeTickMarksCount)
-					// Draw grid lines.
-					for (const y of yAxisTickMarks) {
-						this.canvas.appendChild(this.createGridLine(y))
-					}
-					// Draw charts.
-					for (const { color, graphPoints, isShown } of this.state.y) {
-						// Draw chart.
-						if (isShown) {
-							const graph = document.createElement('polyline')
-							graph.setAttribute('stroke', color)
-							graph.setAttribute('points', this.createPolylinePoints(
-								xGraphPoints.map(this.mapX),
-								graphPoints.map(y => this.mapY(maxY - y * yScale))
-							).join(' '))
-							graph.classList.add('chartogram__graph')
-							this.canvas.appendChild(graph)
-						}
-					}
-					// A workaround to fix WebKit bug when it's not re-rendering the <svg/>.
-					// https://stackoverflow.com/questions/30905493/how-to-force-webkit-to-update-svg-use-elements-after-changes-to-original
-					this.canvas.innerHTML += ''
-					// Draw gauges.
-					this.drawGauges(
-						minX,
-						maxX,
-						minY_,
-						maxY_,
-						yAxisScale
-					)
-					// Draw timeline graph.
-					if (renderTimeline) {
-						this.renderTimeline()
-					}
-				}
-
-				// function animateScale(scale) {
-				// 	console.log(scale)
-				// 	animateScaleTo = scale
-				// 	animateScaleStartedAt = Date.now()
-				// 	previousYScale = yScale
-				// 	requestAnimationFrame(animateScaleTick)
-				// }
-
-				// function animateScaleTick() {
-				// 	const elapsed = Date.now() - animateScaleStartedAt
-				// 	yScale = previousYScale + (animateScaleTo - previousYScale) * elapsed / 300
-				// 	drawGraphs(true)
-				// 	if (elapsed < 300) {
-				// 		requestAnimationFrame(animateScaleTick)
-				// 	}
-				// }
-
-				this.createGridLine = (y) => {
-					const { minX, maxX, minY, maxY, yScale } = this.state
-					const line = document.createElement('line')
-					line.classList.add('chartogram__grid-line')
-					line.setAttribute('x1', this.fixSvgCoordinate(this.mapX(minX)))
-					line.setAttribute('x2', this.fixSvgCoordinate(this.mapX(maxX)))
-					line.setAttribute('y1', this.fixSvgCoordinate(this.mapY(maxY - yScale * y)))
-					line.setAttribute('y2', this.fixSvgCoordinate(this.mapY(maxY - yScale * y)))
-					return line
-				}
-
-				this.drawGauges = (minX, maxX, minY, maxY, yAxisScale) => {
-					const { gaugeTickMarksCount, months } = this.props
-					clearElement(this.xAxis)
-					clearElement(this.yAxis)
-					renderGaugeLabels(this.xAxis, minX, maxX, gaugeTickMarksCount, (timestamp) => {
-						const date = new Date(timestamp)
-						return `${months[date.getMonth()]} ${date.getDate()}`
-					})
-					renderGaugeLabels(this.yAxis, minY, maxY, gaugeTickMarksCount)
-					this.yAxis.style.height = `${100 / yAxisScale}%`
-				}
-
-				this.renderTimeline = () => {
-					const { canvasWidth } = this.props
-					const { x, y } = this.data
-					const { timelineAspectRatio, maxYGlobal, yScale } = this.state
-					// Clear canvas.
-					clearElement(this.timelineCanvas)
-					// Set canvas `viewBox`.
-					this.timelineCanvas.setAttribute('viewBox', `0 0 ${canvasWidth} ${this.fixSvgCoordinate(canvasWidth / timelineAspectRatio)}`)
-					for (const { id, color, points } of y) {
-						const isShown = this.state.y.find(_ => _.id === id).isShown
-						if (isShown) {
-							const [_x, _y] = simplifyGraph(x.points, points, 80)
-							const graph = document.createElement('polyline')
-							graph.setAttribute('stroke', color)
-							graph.setAttribute('points', this.createPolylinePoints(
-								_x.map(this.mapXForTimeline),
-								_y.map(y => this.mapYForTimeline(maxYGlobal - y * yScale))
-							).join(' '))
-							graph.classList.add('chartogram__graph')
-							this.timelineCanvas.appendChild(graph)
-						}
-					}
-					// A workaround to fix WebKit bug when it's not re-rendering the <svg/>.
-					// https://stackoverflow.com/questions/30905493/how-to-force-webkit-to-update-svg-use-elements-after-changes-to-original
-					this.timelineCanvas.innerHTML += ''
-				}
-
-				this.createGraphToggler = ({ id, name, color }) => {
-					const toggler = document.createElement('button')
-					toggler.setAttribute('type', 'button')
-					toggler.classList.add('chartogram__chart-toggler')
-					toggler.classList.add('chartogram__chart-toggler--on')
-					toggler.classList.add('chartogram__reset-button')
-					// Add check.
-					const xmlns = 'http://www.w3.org/2000/svg'
-					const check = document.createElementNS(xmlns, 'svg')
-					check.setAttributeNS(null, 'viewBox', '0 0 19 19')
-					check.classList.add('chartogram__chart-toggler-check')
-					// Add background circle.
-					const backgroundCircle = document.createElementNS(xmlns, 'circle')
-					backgroundCircle.setAttribute('cx', '9.5')
-					backgroundCircle.setAttribute('cy', '9.5')
-					backgroundCircle.setAttribute('r', '9.5')
-					backgroundCircle.setAttribute('fill', color)
-					check.appendChild(backgroundCircle)
-					// Add check circle.
-					const checkCircle = document.createElementNS(xmlns, 'circle')
-					checkCircle.setAttribute('cx', '9.5')
-					checkCircle.setAttribute('cy', '9.5')
-					checkCircle.setAttribute('r', '8')
-					checkCircle.classList.add('chartogram__chart-toggler-check-circle')
-					check.appendChild(checkCircle)
-					// Add check mark.
-					const checkMark = document.createElementNS(xmlns, 'path')
-					checkMark.setAttribute('d', 'M13.64 4.94l-6.2 6.34-1.69-1.9c-.73-.63-1.89.1-1.36 1.06l2 3.38c.3.43 1.04.85 1.78 0 .32-.42 6.31-7.93 6.31-7.93.74-.84-.2-1.58-.84-.95z')
-					checkMark.setAttribute('fill', 'white')
-					checkMark.classList.add('chartogram__chart-toggler-check-mark')
-					check.appendChild(checkMark)
-					// Add checkmark.
-					toggler.appendChild(check)
-					// Add graph name.
-					toggler.appendChild(document.createTextNode(name))
-					// On click.
-					toggler.addEventListener('click', () => {
-						const y = this.state.y.find(_ => _.id === id)
-						// Won't allow hiding all graphs.
-						if (y.isShown) {
-							const graphsShown = this.state.y.filter(_ => _.isShown)
-							if (graphsShown.length === 1) {
-								return
-							}
-						}
-						y.isShown = !y.isShown
-						this.setState({
-							...this.state,
-							...this.calculateMinMaxY(this.state.y)
-						})
-						toggler.classList.toggle('chartogram__chart-toggler--on')
-					})
-					return toggler
-				}
-
-				this.setUpTimelineWindowHandle = (side) => {
-					const handle = side === 'left' ? this.timelineWindowLeftHandle : this.timelineWindowRightHandle
-					const handleWidth = parseFloat(getComputedStyle(this.timelineWindow).borderLeftWidth)
-					let timelineCoordinates
-					let minX
-					let maxX
-					let deltaX
-					let startedX
-					const onDrag = (x) => {
-						x -= deltaX
-						x = Math.max(Math.min(x, maxX), minX)
-						const ratio = (x - timelineCoordinates.x) / timelineCoordinates.width
-						if (side === 'left') {
-							this.updateBounds(ratio, this.state.toRatio)
-						} else {
-							this.updateBounds(this.state.fromRatio, ratio)
-						}
-					}
-					const onDragStart = (x) => {
-						timelineCoordinates = this.timeline.getBoundingClientRect()
-						const timelineWindowCoordinates = this.timelineWindow.getBoundingClientRect()
-						if (side === 'left') {
-							minX = timelineCoordinates.x
-							maxX = timelineWindowCoordinates.x + timelineWindowCoordinates.width - 2 * handleWidth
-							deltaX = x - timelineWindowCoordinates.x
-						} else {
-							minX = timelineWindowCoordinates.x + 2 * handleWidth
-							maxX = timelineCoordinates.x + timelineCoordinates.width
-							deltaX = x - (timelineWindowCoordinates.x + timelineWindowCoordinates.width)
-						}
-					}
-					return setUpDrag(handle, onDragStart, onDrag)
-				}
-
-				this.setUpTimelineWindow = () => {
-					let timelineCoordinates
-					let timelineWindowCoordinates
-					let minX
-					let maxX
-					let innerX
-					const onDrag = (x) => {
-						x -= innerX
-						x = Math.max(Math.min(x, maxX), minX)
-						const ratio = (x - timelineCoordinates.x) / timelineCoordinates.width
-						this.updateBounds(ratio, ratio + timelineWindowCoordinates.width / timelineCoordinates.width)
-					}
-					const onDragStart = (x) => {
-						timelineCoordinates = this.timeline.getBoundingClientRect()
-						timelineWindowCoordinates = this.timelineWindow.getBoundingClientRect()
-						innerX = x - timelineWindowCoordinates.x
-						minX = timelineCoordinates.x
-						maxX = timelineCoordinates.x + (timelineCoordinates.width - timelineWindowCoordinates.width)
-					}
-					return setUpDrag(this.timelineWindowDrag, onDragStart, onDrag)
-				}
-
-				this.setTimelineWindowLeft = (ratio) => {
-					this.timelineOverlayLeft.style.right = `${100 * (1 - ratio)}%`
-					this.timelineWindow.style.left = `${100 * ratio}%`
-				}
-
-				this.setTimelineWindowRight = (ratio) => {
-					this.timelineOverlayRight.style.left = `${100 * ratio}%`
-					this.timelineWindow.style.right = `${100 * (1 - ratio)}%`
-				}
-
-				this.setUpCanvasTooltipListener = () => {
-					const { weekdays, months } = this.props
-					let canvasDimensions
-					let isIndexInBounds
-					const onTrack = (screenX) => {
-						const { minX, maxX, xPoints, y } = this.state
-						const xScreenRatio = (screenX - canvasDimensions.x) / canvasDimensions.width
-						const xPoint = minX + xScreenRatio * (maxX - minX)
-						let xHigherIndex = xPoints.findIndex(_ => _ >= xPoint)
-						let xLowerIndex = xHigherIndex - 1
-						if (!isIndexInBounds(xHigherIndex)) {
-							xHigherIndex = -1
-						}
-						if (!isIndexInBounds(xLowerIndex)) {
-							xLowerIndex = -1
-						}
-						let xIndex
-						if (xHigherIndex < 0) {
-							if (xLowerIndex < 0) {
-								return this.removeTooltip()
-							} else {
-								xIndex = xLowerIndex
-							}
-						} else {
-							if (xLowerIndex < 0) {
-								xIndex = xHigherIndex
-							} else {
-								const xLower = xPoints[xLowerIndex]
-								const xHigher = xPoints[xHigherIndex]
-								const deltaLower = xPoint - xLower
-								const deltaHigher = xHigher - xPoint
-								xIndex = deltaLower > deltaHigher ? xHigherIndex : xLowerIndex
-							}
-						}
-						const x = xPoints[xIndex]
-						if (x !== this.tooltipForX) {
-							this.tooltipForX = x
-							if (!this.tooltip) {
-								this.addTooltip()
-							}
-							const date = new Date(x)
-							this.tooltipDate.textContent = `${weekdays[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}`
-							let i = 0
-							for (const { isShown, points, name } of y) {
-								if (isShown) {
-									this.tooltipValues.childNodes[2 * i].textContent = points[xIndex]
-									this.tooltipValues.childNodes[2 * i + 1].textContent = name
-									i++
-								}
-							}
-							const xRatio = (x - minX) / (maxX - minX)
-							this.tooltip.style.left = `${xRatio * 100}%`
-							this.updateTooltipPoints(xIndex, xRatio)
-							this.updateTooltipLine(x)
-						}
-					}
-					const onTrackStart = () => {
-						canvasDimensions = this.canvas.getBoundingClientRect()
-						isIndexInBounds = (index) => {
-							const { xPoints } = this.state
-							return index >= 0 && index < xPoints.length
-						}
-					}
-					const onTouchStart = (event) => {
-						// Ignore multitouch.
-						if (event.touches.length > 1) {
-							// Reset.
-							return onTrackStop()
-						}
-						onTrackStart()
-						this.canvas.addEventListener('touchend', onTrackStop)
-						this.canvas.addEventListener('touchmove', onTouchMove)
-						this.canvas.addEventListener('touchend', onTrackStop)
-						this.canvas.addEventListener('touchcancel', onTrackStop)
-						onTouchMove(event)
-					}
-					// Safari doesn't support pointer events.
-					// https://caniuse.com/#feat=pointer
-					this.canvas.addEventListener('touchstart', onTouchStart)
-					function onTouchMove(event) {
-						const x = event.changedTouches[0].clientX
-						const y = event.changedTouches[0].clientY
-						// Emulate 'pointerleave' behavior.
-						if (x < canvasDimensions.x ||
-							x > canvasDimensions.x + canvasDimensions.width ||
-							y < canvasDimensions.y ||
-							y > canvasDimensions.y + canvasDimensions.height) {
-							onTrackStop()
-						} else {
-							onTrack(x, y)
-						}
-					}
-					function onPointerMove(event) {
-						onTrack(event.clientX, event.clientY)
-					}
-					const onTrackStop = () => {
-						this.canvas.removeEventListener('pointermove', onPointerMove)
-						this.canvas.removeEventListener('pointerleave', onTrackStop)
-						this.canvas.removeEventListener('pointercancel', onTrackStop)
-						this.canvas.removeEventListener('touchmove', onTouchMove)
-						this.canvas.removeEventListener('touchend', onTrackStop)
-						this.canvas.removeEventListener('touchcancel', onTrackStop)
-						this.removeTooltip()
-					}
-					const onPointerEnter = () => {
-						onTrackStart()
-						this.canvas.addEventListener('pointermove', onPointerMove)
-						this.canvas.addEventListener('pointerleave', onTrackStop)
-						this.canvas.addEventListener('pointercancel', onTrackStop)
-					}
-					this.canvas.addEventListener('pointerenter', onPointerEnter)
-					return () => {
-						onTrackStop()
-						this.canvas.removeEventListener(onPointerEnter)
-						this.canvas.removeEventListener(onTouchStart)
-					}
-				}
-
-				this.addTooltip = () => {
-					const { y } = this.state
-					// Create tooltip.
-					this.tooltip = document.createElement('div')
-					this.tooltip.classList.add('chartogram__tooltip')
-					this.tooltipContainer.appendChild(this.tooltip)
-					// Add tooltip title.
-					this.tooltipDate = document.createElement('h1')
-					this.tooltipDate.classList.add('chartogram__tooltip-header')
-					this.tooltip.appendChild(this.tooltipDate)
-					// Add graph values.
-					this.tooltipValues = document.createElement('dl')
-					this.tooltipValues.classList.add('chartogram__tooltip-values')
-					this.tooltip.appendChild(this.tooltipValues)
-					// Add graph values.
-					for (const { isShown, color } of y) {
-						if (isShown) {
-							// Add graph value.
-							const tooltipValue = document.createElement('dt')
-							tooltipValue.style.color = color
-							this.tooltipValues.appendChild(tooltipValue)
-							// Add graph name.
-							const tooltipName = document.createElement('dd')
-							tooltipName.style.color = color
-							this.tooltipValues.appendChild(tooltipName)
-						}
-					}
-				}
-
-				this.addTooltipLine = () => {
-					const xmlns = 'http://www.w3.org/2000/svg'
-					this.tooltipLine = document.createElementNS(xmlns, 'line')
-					this.tooltipLine.setAttributeNS(null, 'class', 'chartogram__tooltip-line')
-					this.canvas.insertBefore(this.tooltipLine, this.canvas.querySelector('polyline'))
-				}
-
-				this.removeTooltip = () => {
-					if (this.tooltip) {
-						this.tooltipForX = undefined
-						this.tooltipContainer.removeChild(this.tooltip)
-						this.tooltip = undefined
-						this.removeTooltipPoints()
-						this.removeTooltipLine()
-					}
-				}
-
-				this.removeTooltipLine = () => {
-					this.canvas.removeChild(this.tooltipLine)
-					this.tooltipLine = undefined
-				}
-
-				this.addTooltipPoints = () => {
-					this.tooltipPoints = []
-					for (const y of this.state.y) {
-						if (y.isShown) {
-							const point = document.createElement('div')
-							point.classList.add('chartogram__tooltip-point')
-							point.style.color = y.color
-							this.tooltipPoints.push(point)
-							this.canvasWrapper.appendChild(point)
-						}
-					}
-				}
-
-				this.removeTooltipPoints = () => {
-					for (const point of this.tooltipPoints) {
-						this.canvasWrapper.removeChild(point)
-					}
-					this.tooltipPoints = undefined
-				}
-
-				this.updateTooltipLine = (x) => {
-					const { canvasWidth } = this.props
-					const { aspectRatio } = this.state
-					if (!this.tooltipLine) {
-						this.addTooltipLine()
-					}
-					this.tooltipLine.setAttributeNS(null, 'x1', this.fixSvgCoordinate(this.mapX(x)))
-					this.tooltipLine.setAttributeNS(null, 'x2', this.fixSvgCoordinate(this.mapX(x)))
-					this.tooltipLine.setAttributeNS(null, 'y1', 0)
-					this.tooltipLine.setAttributeNS(null, 'y2', this.fixSvgCoordinate(canvasWidth / aspectRatio))
-				}
-
-				this.updateTooltipPoints = (xIndex, xRatio) => {
-					const { maxY, y } = this.state
-					if (!this.tooltipPoints) {
-						this.addTooltipPoints()
-					}
-					let i = 0
-					while (i < this.tooltipPoints.length) {
-						const point = this.tooltipPoints[i]
-						const _y = y[i].points[xIndex]
-						const yRatio = _y / maxY
-						point.style.left = `${xRatio * 100}%`
-						point.style.bottom = `${yRatio * 100}%`
-						i++
-					}
-				}
-
-				this.constructor(rootNode, data, title, options)
-				this.componentDidMount()
-				this.render()
 			}
 		</script>
 	</body>
