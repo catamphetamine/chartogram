@@ -506,7 +506,7 @@ export default class Chartogram {
 		const onDrag = (x) => {
 			x -= deltaX
 			x = Math.max(Math.min(x, maxX), minX)
-			const ratio = (x - timelineCoordinates.x) / timelineCoordinates.width
+			const ratio = (x - timelineCoordinates.left) / timelineCoordinates.width
 			if (side === 'left') {
 				this.updateBounds(ratio, this.state.toRatio)
 			} else {
@@ -517,13 +517,13 @@ export default class Chartogram {
 			timelineCoordinates = this.timeline.getBoundingClientRect()
 			const timelineWindowCoordinates = this.timelineWindow.getBoundingClientRect()
 			if (side === 'left') {
-				minX = timelineCoordinates.x
-				maxX = timelineWindowCoordinates.x + timelineWindowCoordinates.width - 2 * handleWidth
-				deltaX = x - timelineWindowCoordinates.x
+				minX = timelineCoordinates.left
+				maxX = timelineWindowCoordinates.left + timelineWindowCoordinates.width - 2 * handleWidth
+				deltaX = x - timelineWindowCoordinates.left
 			} else {
-				minX = timelineWindowCoordinates.x + 2 * handleWidth
-				maxX = timelineCoordinates.x + timelineCoordinates.width
-				deltaX = x - (timelineWindowCoordinates.x + timelineWindowCoordinates.width)
+				minX = timelineWindowCoordinates.left + 2 * handleWidth
+				maxX = timelineCoordinates.left + timelineCoordinates.width
+				deltaX = x - (timelineWindowCoordinates.left + timelineWindowCoordinates.width)
 			}
 		}
 		return setUpDrag(handle, onDragStart, onDrag)
@@ -538,15 +538,15 @@ export default class Chartogram {
 		const onDrag = (x) => {
 			x -= innerX
 			x = Math.max(Math.min(x, maxX), minX)
-			const ratio = (x - timelineCoordinates.x) / timelineCoordinates.width
+			const ratio = (x - timelineCoordinates.left) / timelineCoordinates.width
 			this.updateBounds(ratio, ratio + timelineWindowCoordinates.width / timelineCoordinates.width)
 		}
 		const onDragStart = (x) => {
 			timelineCoordinates = this.timeline.getBoundingClientRect()
 			timelineWindowCoordinates = this.timelineWindow.getBoundingClientRect()
-			innerX = x - timelineWindowCoordinates.x
-			minX = timelineCoordinates.x
-			maxX = timelineCoordinates.x + (timelineCoordinates.width - timelineWindowCoordinates.width)
+			innerX = x - timelineWindowCoordinates.left
+			minX = timelineCoordinates.left
+			maxX = timelineCoordinates.left + (timelineCoordinates.width - timelineWindowCoordinates.width)
 		}
 		return setUpDrag(this.timelineWindowDrag, onDragStart, onDrag)
 	}
@@ -567,7 +567,7 @@ export default class Chartogram {
 		let isIndexInBounds
 		const onTrack = (screenX) => {
 			const { minX, maxX, xPoints, y } = this.state
-			const xScreenRatio = (screenX - canvasDimensions.x) / canvasDimensions.width
+			const xScreenRatio = (screenX - canvasDimensions.left) / canvasDimensions.width
 			const xPoint = minX + xScreenRatio * (maxX - minX)
 			let xHigherIndex = xPoints.findIndex(_ => _ >= xPoint)
 			let xLowerIndex = xHigherIndex - 1
@@ -644,10 +644,10 @@ export default class Chartogram {
 			const x = event.changedTouches[0].clientX
 			const y = event.changedTouches[0].clientY
 			// Emulate 'pointerleave' behavior.
-			if (x < canvasDimensions.x ||
-				x > canvasDimensions.x + canvasDimensions.width ||
-				y < canvasDimensions.y ||
-				y > canvasDimensions.y + canvasDimensions.height) {
+			if (x < canvasDimensions.left ||
+				x > canvasDimensions.left + canvasDimensions.width ||
+				y < canvasDimensions.top ||
+				y > canvasDimensions.top + canvasDimensions.height) {
 				onTrackStop()
 			} else {
 				onTrack(x, y)
