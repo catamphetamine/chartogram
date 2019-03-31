@@ -42,7 +42,11 @@
     "url": "git+https://github.com/catamphetamine/chartogram.git"
   },
   "keywords": [
-    "charts"
+    "charts",
+    "chart",
+    "graph",
+    "plot",
+    "diagram"
   ],
   "author": "catamphetamine <purecatamphetamine@gmail.com>",
   "license": "MIT",
