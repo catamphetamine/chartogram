@@ -52,8 +52,9 @@
 				--chartogram-canvas-height: 22em;
 				--chartogram-background-color: white;
 				--chartogram-font-size: 16px;
-				--chartogram-stroke-width: 3px;
-				--chartogram-timeline-stroke-width: 2px;
+				--chartogram-stroke-width-bold: 3px;
+				--chartogram-stroke-width-normal: 2px;
+				--chartogram-stroke-width-light: 1px;
 				--chartogram-x-axis-labels-padding-top: 0.7em;
 				--chartogram-y-axis-labels-padding-bottom: 0.5em;
 				--chartogram-timeline-overlay-color: rgba(245,247,250,0.85);
@@ -192,7 +193,7 @@
 			}
 
 			.chartogram__graph {
-				stroke-width: var(--chartogram-stroke-width);
+				stroke-width: var(--chartogram-stroke-width-bold);
 				/* `vector-effect` fixes `stroke-width` to be in screen pixels. */
 				/* (instead of <svg/> `viewBox` units) */
 				/* `vector-effect` is not supported in Edge and IE but */
@@ -206,7 +207,7 @@
 			.chartogram__grid-line {
 				stroke: var(--chartogram-content-color-lightest);
 				transition: stroke var(--chartogram-night-mode-transition-duration);
-				stroke-width: var(--chartogram-timeline-stroke-width);
+				stroke-width: var(--chartogram-stroke-width-light);
 				/* `vector-effect` fixes `stroke-width` to be in screen pixels. */
 				/* (instead of <svg/> `viewBox` units) */
 				/* `vector-effect` is not supported in Edge and IE but */
@@ -272,9 +273,9 @@
 
 			.chartogram__tooltip-point {
 				position: absolute;
-				width: calc(var(--chartogram-stroke-width) * 3);
-				height: calc(var(--chartogram-stroke-width) * 3);
-				box-shadow: 0 0 0 var(--chartogram-stroke-width) currentColor;
+				width: calc(var(--chartogram-stroke-width-bold) * 3);
+				height: calc(var(--chartogram-stroke-width-bold) * 3);
+				box-shadow: 0 0 0 var(--chartogram-stroke-width-bold) currentColor;
 				border-radius: 50%;
 				background-color: var(--chartogram-background-color);
 				transform: translateX(-50%) translateY(50%);
@@ -284,7 +285,7 @@
 
 			.chartogram__tooltip-line {
 				stroke: var(--chartogram-content-color-light);
-				stroke-width: var(--chartogram-timeline-stroke-width);
+				stroke-width: var(--chartogram-stroke-width-light);
 				/* `vector-effect` fixes `stroke-width` to be in screen pixels. */
 				/* (instead of <svg/> `viewBox` units) */
 				/* `vector-effect` is not supported in Edge and IE but */
@@ -377,7 +378,7 @@
 			}
 
 			.chartogram__timeline-canvas .chartogram__graph {
-				stroke-width: var(--chartogram-timeline-stroke-width);
+				stroke-width: var(--chartogram-stroke-width-normal);
 			}
 
 			.chartogram__chart-togglers {
