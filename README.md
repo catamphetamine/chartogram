@@ -183,10 +183,8 @@ body {
 
 ## Browser compatibility
 
-Tested in Chrome, Firefox and iOS Safari.
+Tested in Chrome, Firefox, Microsoft Edge and iOS Safari.
 
-Can work in Edge.
-
-For some reason doesn't show the SVG element in Internet Explorer.
+For some reason doesn't show the `.chartogram__canvas` SVG element when it's wrapped in `.chartogram__canvas-wrapper` in Internet Explorer.
 
 The styles use [CSS variables](https://caniuse.com/#feat=css-variables) which work everywhere except Internet Explorer.
