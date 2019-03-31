@@ -49,6 +49,7 @@
 			}
 
 			.chartogram {
+				--chartogram-canvas-height: 22em;
 				--chartogram-background-color: white;
 				--chartogram-font-size: 16px;
 				--chartogram-stroke-width: 3px;
@@ -140,7 +141,7 @@
 
 			.chartogram__canvas {
 				width: 100%;
-				height: 22em;
+				height: var(--chartogram-canvas-height);
 				/* Don't crop graphs on canvas edges. */
 				/* Also don't crop the bottom-most grid line. */
 				overflow: visible;
@@ -194,9 +195,8 @@
 				stroke-width: var(--chartogram-stroke-width);
 				/* `vector-effect` fixes `stroke-width` to be in screen pixels. */
 				/* (instead of <svg/> `viewBox` units) */
-				/* `vector-effect` is not supported in Edge and IE. */
-				/* But for demo purposes it will suffice. */
-				/* Can be replaced with scaling `stroke-width` relative to viewport width. */
+				/* `vector-effect` is not supported in Edge and IE but */
+				/* it's purely a presentational tweak and doesn't affect operation. */
 				vector-effect: non-scaling-stroke;
 				stroke-linejoin: round;
 				stroke-linecap: round;
@@ -209,9 +209,8 @@
 				stroke-width: var(--chartogram-timeline-stroke-width);
 				/* `vector-effect` fixes `stroke-width` to be in screen pixels. */
 				/* (instead of <svg/> `viewBox` units) */
-				/* `vector-effect` is not supported in Edge and IE. */
-				/* But for demo purposes it will suffice. */
-				/* Can be replaced with scaling `stroke-width` relative to viewport width. */
+				/* `vector-effect` is not supported in Edge and IE but */
+				/* it's purely a presentational tweak and doesn't affect operation. */
 				vector-effect: non-scaling-stroke;
 			}
 
@@ -285,12 +284,11 @@
 
 			.chartogram__tooltip-line {
 				stroke: var(--chartogram-content-color-light);
-				stroke-width: 1px;
+				stroke-width: var(--chartogram-timeline-stroke-width);
 				/* `vector-effect` fixes `stroke-width` to be in screen pixels. */
 				/* (instead of <svg/> `viewBox` units) */
-				/* `vector-effect` is not supported in Edge and IE. */
-				/* But for demo purposes it will suffice. */
-				/* Can be replaced with scaling `stroke-width` relative to viewport width. */
+				/* `vector-effect` is not supported in Edge and IE but */
+				/* it's purely a presentational tweak and doesn't affect operation. */
 				vector-effect: non-scaling-stroke;
 			}
 
