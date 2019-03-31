@@ -536,8 +536,8 @@
 					"x": "x"
 				},
 				"names": {
-					"y0": "Subscribed",
-					"y1": "Unsubscribed"
+					"y0": "#0",
+					"y1": "#1"
 				},
 				"colors": {
 					"y0": "#3DC23F",
@@ -909,7 +909,7 @@
 					this.props = {
 						gaugeTickMarksCount: 6,
 						timelineWindowSize: 40,
-						canvasWidth: 1024,
+						canvasWidth: 512,
 						precisionFactor: Math.pow(10, options.precision || 3),
 						months: [
 							'Jan',
@@ -1184,19 +1184,9 @@
 					return ((y - minYGlobal) / (maxYGlobal - minYGlobal)) * canvasWidth / timelineAspectRatio
 				}
 
-				this.toSvgYs = (y, min, max) => {
-					const { yScale } = this.state
-					return y.map(y => this.mapY(max - y * yScale))
-				}
-
-				this.toTimelineSvgYs = (y, min, max) => {
-					const { yScale } = this.state
-					return y.map(y => this.mapYForTimeline(max - y * yScale))
-				}
-
 				this.render = (renderTimeline = true) => {
 					const { canvasWidth, gaugeTickMarksCount } = this.props
-					const { minX, maxX, minY, maxY, xGraphPoints, aspectRatio } = this.state
+					const { minX, maxX, minY, maxY, yScale, xGraphPoints, aspectRatio } = this.state
 					// Clear canvas.
 					clearElement(this.canvas)
 					// Set canvas `viewBox`.
@@ -1216,7 +1206,10 @@
 						if (isShown) {
 							const graph = document.createElement('polyline')
 							graph.setAttribute('stroke', color)
-							graph.setAttribute('points', this.createPolylinePoints(xGraphPoints.map(this.mapX), this.toSvgYs(graphPoints, minY, maxY)).join(' '))
+							graph.setAttribute('points', this.createPolylinePoints(
+								xGraphPoints.map(this.mapX),
+								graphPoints.map(y => this.mapY(maxY - y * yScale))
+							).join(' '))
 							graph.classList.add('chartogram__graph')
 							this.canvas.appendChild(graph)
 						}
@@ -1281,7 +1274,7 @@
 				this.renderTimeline = () => {
 					const { canvasWidth } = this.props
 					const { x, y } = this.data
-					const { timelineAspectRatio, minYGlobal, maxYGlobal } = this.state
+					const { timelineAspectRatio, maxYGlobal, yScale } = this.state
 					// Clear canvas.
 					clearElement(this.timelineCanvas)
 					// Set canvas `viewBox`.
@@ -1292,7 +1285,10 @@
 							const [_x, _y] = simplifyGraph(x.points, points, 80)
 							const graph = document.createElement('polyline')
 							graph.setAttribute('stroke', color)
-							graph.setAttribute('points', this.createPolylinePoints(_x.map(this.mapXForTimeline), this.toTimelineSvgYs(_y, minYGlobal, maxYGlobal)).join(' '))
+							graph.setAttribute('points', this.createPolylinePoints(
+								_x.map(this.mapXForTimeline),
+								_y.map(y => this.mapYForTimeline(maxYGlobal - y * yScale))
+							).join(' '))
 							graph.classList.add('chartogram__graph')
 							this.timelineCanvas.appendChild(graph)
 						}
