@@ -1,6 +1,6 @@
 {
   "name": "chartogram",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Charts in JS with no dependencies",
   "main": "index.commonjs.js",
   "module": "index.js",
