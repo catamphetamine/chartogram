@@ -76,20 +76,19 @@ export default class Timeline {
 	}
 
 	render() {
-		const { canvasWidth, y, yScale, data, maxYGlobal } = this.props
+		const { canvasWidth, y, yScale, data, maxYGlobal, fixSvgCoordinate, createPolylinePoints } = this.props
 		const { aspectRatio } = this.state
-		const { x } = data
 		// Clear canvas.
 		clearElement(this.timelineCanvas)
 		// Set canvas `viewBox`.
-		this.timelineCanvas.setAttribute('viewBox', `0 0 ${canvasWidth} ${this.fixSvgCoordinate(canvasWidth / aspectRatio)}`)
+		this.timelineCanvas.setAttribute('viewBox', `0 0 ${canvasWidth} ${fixSvgCoordinate(canvasWidth / aspectRatio)}`)
 		for (const { id, color, points } of data.y) {
 			const isShown = y.find(_ => _.id === id).isShown
 			if (isShown) {
-				const [_x, _y] = simplifyGraph(x.points, points, 80)
+				const [_x, _y] = simplifyGraph(data.x.points, points, 80)
 				const graph = document.createElement('polyline')
 				graph.setAttribute('stroke', color)
-				graph.setAttribute('points', this.createPolylinePoints(
+				graph.setAttribute('points', createPolylinePoints(
 					_x.map(this.mapX),
 					_y.map(y => this.mapY(maxYGlobal - y * yScale))
 				).join(' '))
@@ -112,17 +111,6 @@ export default class Timeline {
 		this.props.fromRatio = from
 		this.props.toRatio = to
 		this.onChangeBounds(from, to)
-	}
-
-	createPolylinePoints(x, y) {
-		// return commaJoin(x, y)
-		return commaJoin(x.map(this.fixSvgCoordinate), y.map(this.fixSvgCoordinate))
-	}
-
-	// Firefox is buggy with too high and too fractional SVG coordinates.
-	fixSvgCoordinate = (x) => {
-		const { precisionFactor } = this.props
-		return Math.round(x * precisionFactor) / precisionFactor
 	}
 
 	mapX = (x) => {
