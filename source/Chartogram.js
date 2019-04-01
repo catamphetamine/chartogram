@@ -3,20 +3,20 @@ import {
 	commaJoin,
 	getLowerSiblingDivisibleBy,
 	divideInterval,
-	renderGaugeLabels,
 	throttle,
-	simplifyGraph,
-	setUpDrag
+	renderGaugeLabels
 } from './utility'
 
+import Timeline from './Timeline'
+
 export default class Chartogram {
-	constructor(rootNode, data, title = 'Title', options = {}) {
+	constructor(rootNode, data, title = 'Title', props = {}) {
 		this.props = {
 			title,
 			gaugeTickMarksCount: 6,
 			timelineWindowSize: 40,
 			canvasWidth: 512,
-			precisionFactor: Math.pow(10, options.precision || 3),
+			precisionFactor: Math.pow(10, props.precision || 3),
 			months: [
 				'Jan',
 				'Feb',
@@ -40,7 +40,7 @@ export default class Chartogram {
 				'Fri',
 				'Sat'
 			],
-			...options
+			...props
 		}
 
 		this.rootNode = rootNode
@@ -76,18 +76,7 @@ export default class Chartogram {
 					</div>
 				</div>
 			</div>
-			<div class="chartogram__timeline">
-				<div class="chartogram__timeline-canvas-padding">
-					<svg class="chartogram__timeline-canvas" preserveAspectRatio="none"></svg>
-				</div>
-				<div class="chartogram__timeline-overlay-left"></div>
-				<div class="chartogram__timeline-overlay-right"></div>
-				<div class="chartogram__timeline-window">
-					<button type="button" class="chartogram__reset-button chartogram__timeline-window__drag"></button>
-					<button type="button" class="chartogram__reset-button chartogram__timeline-window__left-handle"></button>
-					<button type="button" class="chartogram__reset-button chartogram__timeline-window__right-handle"></button>
-				</div>
-			</div>
+			${Timeline.INITIAL_MARKUP}
 			<div class="chartogram__chart-togglers"></div>
 		`
 
@@ -96,18 +85,7 @@ export default class Chartogram {
 		this.canvasWrapper = this.rootNode.querySelector('.chartogram__canvas-wrapper')
 		this.xAxis = this.rootNode.querySelector('.chartogram__x')
 		this.yAxis = this.rootNode.querySelector('.chartogram__y')
-		this.timeline = this.rootNode.querySelector('.chartogram__timeline')
-		this.timelineOverlayLeft = this.rootNode.querySelector('.chartogram__timeline-overlay-left')
-		this.timelineWindowLeftHandle = this.rootNode.querySelector('.chartogram__timeline-window__left-handle')
-		this.timelineWindow = this.rootNode.querySelector('.chartogram__timeline-window')
-		this.timelineWindowDrag = this.rootNode.querySelector('.chartogram__timeline-window__drag')
-		this.timelineWindowRightHandle = this.rootNode.querySelector('.chartogram__timeline-window__right-handle')
-		this.timelineOverlayRight = this.rootNode.querySelector('.chartogram__timeline-overlay-right')
-		this.timelineCanvas = this.rootNode.querySelector('.chartogram__timeline-canvas')
 
-		this.setUpTimelineWindowHandle('left')
-		this.setUpTimelineWindowHandle('right')
-		this.setUpTimelineWindow()
 		this.setUpCanvasTooltipListener()
 
 		// Add graph togglers.
@@ -120,10 +98,13 @@ export default class Chartogram {
 		// Render will be called after `.componentDidMount()`.
 		this.state = this.getInitialState()
 
-		this.updateTimelineBounds(this.state.fromRatio, this.state.toRatio)
+		this.timeline = new Timeline(this.getTimelineProps())
+		this.timeline.componentDidMount()
 
 		// Add window resize event listener.
 		window.addEventListener('resize', this.onResizeThrottled)
+
+		this.render()
 	}
 
 	componentWillUnmount() {
@@ -135,9 +116,8 @@ export default class Chartogram {
 
 	onResize = (event) => {
 		this.setState({
-			aspectRatio: this.getCanvasAspectRatio(),
-			timelineAspectRatio: this.getTimelineCanvasAspectRatio()
-		})
+			aspectRatio: this.getCanvasAspectRatio()
+		}, false)
 	}
 
 	onResizeThrottled = throttle(this.onResize, 33)
@@ -147,17 +127,31 @@ export default class Chartogram {
 		return canvasDimensions.width / canvasDimensions.height
 	}
 
-	getTimelineCanvasAspectRatio() {
-		const timelineCanvasDimensions = this.timelineCanvas.getBoundingClientRect()
-		return timelineCanvasDimensions.width / timelineCanvasDimensions.height
-	}
-
-	setState(newState, renderTimeline) {
+	setState(newState, renderTimeline = true) {
 		this.state = {
 			...this.state,
 			...newState
 		}
-		this.render(renderTimeline)
+		this.render()
+		if (renderTimeline) {
+			this.timeline.componentDidUpdate(this.getTimelineProps())
+		}
+	}
+
+	getTimelineProps() {
+		return {
+			rootNode: this.rootNode,
+			data: this.data,
+			canvasWidth: this.props.canvasWidth,
+			precisionFactor: this.props.precisionFactor,
+			fromRatio: this.state.fromRatio,
+			toRatio: this.state.toRatio,
+			minYGlobal: this.state.minYGlobal,
+			maxYGlobal: this.state.maxYGlobal,
+			y: this.state.y,
+			yScale: this.state.yScale,
+			onChangeBounds: this.onChangeBounds
+		}
 	}
 
 	getInitialState() {
@@ -175,7 +169,6 @@ export default class Chartogram {
 		return {
 			...this.createState(fromRatio, toRatio),
 			aspectRatio: this.getCanvasAspectRatio(),
-			timelineAspectRatio: this.getTimelineCanvasAspectRatio(),
 			yScale: 1
 		}
 	}
@@ -252,7 +245,7 @@ export default class Chartogram {
 	}
 
 	calculateMinMaxY(y) {
-		// Calculate timeline min/max Y for the graphs being shown.
+		// Calculate visible min/max Y for the graphs being shown.
 		let minY = Infinity
 		let maxY = -Infinity
 		for (const _y of y) {
@@ -261,8 +254,6 @@ export default class Chartogram {
 				maxY = Math.max(maxY, _y.max)
 			}
 		}
-		// Min Y is always 0 by design.
-		minY = 0
 		// Calculate global min/max Y for the graphs being shown.
 		let minYGlobal = Infinity
 		let maxYGlobal = -Infinity
@@ -283,13 +274,7 @@ export default class Chartogram {
 		}
 	}
 
-	updateTimelineBounds(from, to) {
-		this.setTimelineWindowLeft(from)
-		this.setTimelineWindowRight(to)
-	}
-
-	updateBounds(from, to) {
-		this.updateTimelineBounds(from, to)
+	onChangeBounds = (from, to) => {
 		this.setState(this.createState(from, to), false)
 	}
 
@@ -316,19 +301,7 @@ export default class Chartogram {
 		return ((y - minY) / (maxY - minY)) * canvasWidth / aspectRatio
 	}
 
-	mapXForTimeline = (x) => {
-		const { canvasWidth } = this.props
-		const { minX, maxX } = this.data
-		return ((x - minX) / (maxX - minX)) * canvasWidth
-	}
-
-	mapYForTimeline = (y) => {
-		const { canvasWidth } = this.props
-		const { minYGlobal, maxYGlobal, timelineAspectRatio } = this.state
-		return ((y - minYGlobal) / (maxYGlobal - minYGlobal)) * canvasWidth / timelineAspectRatio
-	}
-
-	render(renderTimeline = true) {
+	render() {
 		const { canvasWidth, gaugeTickMarksCount } = this.props
 		const { minX, maxX, minY, maxY, yScale, xGraphPoints, aspectRatio } = this.state
 		// Clear canvas.
@@ -369,10 +342,6 @@ export default class Chartogram {
 			maxY_,
 			yAxisScale
 		)
-		// Draw timeline graph.
-		if (renderTimeline) {
-			this.renderTimeline()
-		}
 	}
 
 	// function animateScale(scale) {
@@ -413,33 +382,6 @@ export default class Chartogram {
 		})
 		renderGaugeLabels(this.yAxis, minY, maxY, gaugeTickMarksCount)
 		this.yAxis.style.height = `${100 / yAxisScale}%`
-	}
-
-	renderTimeline = () => {
-		const { canvasWidth } = this.props
-		const { x, y } = this.data
-		const { timelineAspectRatio, maxYGlobal, yScale } = this.state
-		// Clear canvas.
-		clearElement(this.timelineCanvas)
-		// Set canvas `viewBox`.
-		this.timelineCanvas.setAttribute('viewBox', `0 0 ${canvasWidth} ${this.fixSvgCoordinate(canvasWidth / timelineAspectRatio)}`)
-		for (const { id, color, points } of y) {
-			const isShown = this.state.y.find(_ => _.id === id).isShown
-			if (isShown) {
-				const [_x, _y] = simplifyGraph(x.points, points, 80)
-				const graph = document.createElement('polyline')
-				graph.setAttribute('stroke', color)
-				graph.setAttribute('points', this.createPolylinePoints(
-					_x.map(this.mapXForTimeline),
-					_y.map(y => this.mapYForTimeline(maxYGlobal - y * yScale))
-				).join(' '))
-				graph.classList.add('chartogram__graph')
-				this.timelineCanvas.appendChild(graph)
-			}
-		}
-		// A workaround to fix WebKit bug when it's not re-rendering the <svg/>.
-		// https://stackoverflow.com/questions/30905493/how-to-force-webkit-to-update-svg-use-elements-after-changes-to-original
-		this.timelineCanvas.innerHTML += ''
 	}
 
 	createGraphToggler = ({ id, name, color }) => {
@@ -495,72 +437,6 @@ export default class Chartogram {
 			toggler.classList.toggle('chartogram__chart-toggler--on')
 		})
 		return toggler
-	}
-
-	setUpTimelineWindowHandle = (side) => {
-		const handle = side === 'left' ? this.timelineWindowLeftHandle : this.timelineWindowRightHandle
-		const handleWidth = parseFloat(getComputedStyle(this.timelineWindow).borderLeftWidth)
-		let timelineCoordinates
-		let minX
-		let maxX
-		let deltaX
-		let startedX
-		const onDrag = (x) => {
-			x -= deltaX
-			x = Math.max(Math.min(x, maxX), minX)
-			const ratio = (x - timelineCoordinates.left) / timelineCoordinates.width
-			if (side === 'left') {
-				this.updateBounds(ratio, this.state.toRatio)
-			} else {
-				this.updateBounds(this.state.fromRatio, ratio)
-			}
-		}
-		const onDragStart = (x) => {
-			timelineCoordinates = this.timeline.getBoundingClientRect()
-			const timelineWindowCoordinates = this.timelineWindow.getBoundingClientRect()
-			if (side === 'left') {
-				minX = timelineCoordinates.left
-				maxX = timelineWindowCoordinates.left + timelineWindowCoordinates.width - 2 * handleWidth
-				deltaX = x - timelineWindowCoordinates.left
-			} else {
-				minX = timelineWindowCoordinates.left + 2 * handleWidth
-				maxX = timelineCoordinates.left + timelineCoordinates.width
-				deltaX = x - (timelineWindowCoordinates.left + timelineWindowCoordinates.width)
-			}
-		}
-		return setUpDrag(handle, onDragStart, onDrag)
-	}
-
-	setUpTimelineWindow = () => {
-		let timelineCoordinates
-		let timelineWindowCoordinates
-		let minX
-		let maxX
-		let innerX
-		const onDrag = (x) => {
-			x -= innerX
-			x = Math.max(Math.min(x, maxX), minX)
-			const ratio = (x - timelineCoordinates.left) / timelineCoordinates.width
-			this.updateBounds(ratio, ratio + timelineWindowCoordinates.width / timelineCoordinates.width)
-		}
-		const onDragStart = (x) => {
-			timelineCoordinates = this.timeline.getBoundingClientRect()
-			timelineWindowCoordinates = this.timelineWindow.getBoundingClientRect()
-			innerX = x - timelineWindowCoordinates.left
-			minX = timelineCoordinates.left
-			maxX = timelineCoordinates.left + (timelineCoordinates.width - timelineWindowCoordinates.width)
-		}
-		return setUpDrag(this.timelineWindowDrag, onDragStart, onDrag)
-	}
-
-	setTimelineWindowLeft = (ratio) => {
-		this.timelineOverlayLeft.style.right = `${100 * (1 - ratio)}%`
-		this.timelineWindow.style.left = `${100 * ratio}%`
-	}
-
-	setTimelineWindowRight = (ratio) => {
-		this.timelineOverlayRight.style.left = `${100 * ratio}%`
-		this.timelineWindow.style.right = `${100 * (1 - ratio)}%`
 	}
 
 	setUpCanvasTooltipListener = () => {
