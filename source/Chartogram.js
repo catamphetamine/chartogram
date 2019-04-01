@@ -387,20 +387,24 @@ export default class Chartogram {
 		)
 	}
 
-	// function animateScale(scale) {
-	// 	console.log(scale)
-	// 	animateScaleTo = scale
-	// 	animateScaleStartedAt = Date.now()
-	// 	previousYScale = yScale
-	// 	requestAnimationFrame(animateScaleTick)
+	// animateScale(scale) {
+	// 	this.setState({
+	// 		yScaleFrom: this.state.yScale,
+	// 		yScale,
+	// 		yScaleTransitionStartedAt: Date.now()
+	// 	}) = scale
+	// 	requestAnimationFrame(this.transitionScaleTick)
 	// }
 
-	// function animateScaleTick() {
-	// 	const elapsed = Date.now() - animateScaleStartedAt
-	// 	yScale = previousYScale + (animateScaleTo - previousYScale) * elapsed / 300
-	// 	drawGraphs(true)
-	// 	if (elapsed < 300) {
-	// 		requestAnimationFrame(animateScaleTick)
+	// transitionScaleTick = () => {
+	// 	const { yScaleTransitionStartedAt, yScaleFrom, yScale } = this.state
+	// 	const elapsed = Date.now() - yScaleTransitionStartedAt
+	// 	const ratio = Math.min(elapsed / 300, 1)
+	// 	this.setState({
+	// 		yScaleTransitioned: yScaleFrom + (yScale - yScaleFrom) * ratio
+	// 	})
+	// 	if (ratio < 1) {
+	// 		requestAnimationFrame(this.transitionScaleTick)
 	// 	}
 	// }
 
