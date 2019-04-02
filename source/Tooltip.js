@@ -147,8 +147,10 @@ export default class Tooltip {
 
 	mount() {
 		this.renderTooltip()
-		this.renderLine()
 		this.renderPoints()
+		if (!this.isLineRendered()) {
+			this.renderLine()
+		}
 	}
 
 	renderTooltip() {
@@ -195,8 +197,15 @@ export default class Tooltip {
 			container.removeChild(this.tooltip)
 			this.tooltip = undefined
 			this.unmountPoints()
-			this.unmountLine()
+			if (this.isLineRendered()) {
+				this.unmountLine()
+			}
 		}
+	}
+
+	isLineRendered() {
+		const { canvas } = this.props
+		return this.line && this.line.parentNode === canvas
 	}
 
 	unmountLine = () => {
@@ -228,6 +237,9 @@ export default class Tooltip {
 	}
 
 	updateLine = (x) => {
+		if (!this.isLineRendered()) {
+			this.renderLine()
+		}
 		const { canvasWidth, aspectRatio, fixSvgCoordinate, mapX } = this.props
 		this.line.setAttributeNS(null, 'x1', fixSvgCoordinate(mapX(x)))
 		this.line.setAttributeNS(null, 'x2', fixSvgCoordinate(mapX(x)))
