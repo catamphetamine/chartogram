@@ -15,7 +15,7 @@ export default class Chartogram {
 	constructor(rootNode, data, title = 'Title', props = {}) {
 		this.props = {
 			title,
-			transitionDuration: 300,
+			transitionDuration: 250,
 			transitionEasing: 'easeOutQuad',
 			gaugeTickMarksCount: 6,
 			timelineWindowSize: 40,
@@ -83,8 +83,7 @@ export default class Chartogram {
 
 	onResize = (event) => {
 		this.setState({
-			aspectRatio: this.getCanvasAspectRatio(),
-			canvasWidthPx: this.getCanvasWidthPx()
+			aspectRatio: this.getCanvasAspectRatio()
 		}, false)
 	}
 
@@ -93,11 +92,6 @@ export default class Chartogram {
 	getCanvasAspectRatio() {
 		const canvasDimensions = this.canvas.getBoundingClientRect()
 		return canvasDimensions.width / canvasDimensions.height
-	}
-
-	getCanvasWidthPx() {
-		const canvasDimensions = this.canvas.getBoundingClientRect()
-		return canvasDimensions.width
 	}
 
 	setState(newState, renderTimeline = true) {
@@ -140,7 +134,6 @@ export default class Chartogram {
 	getTooltipProps() {
 		return {
 			canvas: this.canvas,
-			canvasWidthPx: this.state.canvasWidthPx,
 			container: this.tooltipContainer,
 			pointsContainer: this.canvasWrapper,
 			weekdays: this.props.weekdays,
@@ -172,7 +165,6 @@ export default class Chartogram {
 		return {
 			...this.createState(fromRatio, toRatio),
 			aspectRatio: this.getCanvasAspectRatio(),
-			canvasWidthPx: this.getCanvasWidthPx(),
 			graphOpacity: this.data.y.map(_ => 1)
 		}
 	}
@@ -388,7 +380,7 @@ export default class Chartogram {
 		const deltaMaxY = Math.abs(maxY - this.state.maxY) / heightBefore
 		const deltaMinY = Math.abs(minY - this.state.minY) / heightBefore
 		const deltaY = Math.max(deltaMinY, deltaMaxY)
-		const transitionDuration = maxTransitionDuration * Math.max(0.1, Math.min(deltaY, 0.5) * 2)
+		const transitionDuration = maxTransitionDuration * Math.max(0.2, Math.min(deltaY, 0.5) * 2)
 		this.setState({
 			graphOpacityFrom: this.state.graphOpacity,
 			graphOpacityTo: graphOpacity,

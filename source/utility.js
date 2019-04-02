@@ -154,3 +154,67 @@ export function setUpDrag(element, onDragStart, onDrag) {
 		element.removeEventListener(onTouchStart)
 	}
 }
+
+export function setUpTouchMove(element, _onTrackStart, _onTrack, _onTrackStop) {
+	let elementBounds
+	function onTrack(x, y) {
+		_onTrack(x, y, elementBounds)
+	}
+	function onTrackStart() {
+		elementBounds = element.getBoundingClientRect()
+		_onTrackStart()
+	}
+	function onTouchStart(event) {
+		// Ignore multitouch.
+		if (event.touches.length > 1) {
+			// Reset.
+			return onTrackStop()
+		}
+		onTrackStart()
+		element.addEventListener('touchend', onTrackStop)
+		element.addEventListener('touchmove', onTouchMove)
+		element.addEventListener('touchend', onTrackStop)
+		element.addEventListener('touchcancel', onTrackStop)
+		onTouchMove(event)
+	}
+	// Safari doesn't support pointer events.
+	// https://caniuse.com/#feat=pointer
+	element.addEventListener('touchstart', onTouchStart)
+	function onTouchMove(event) {
+		const x = event.changedTouches[0].clientX
+		const y = event.changedTouches[0].clientY
+		// Emulate 'pointerleave' behavior.
+		if (x < elementBounds.left ||
+			x > elementBounds.left + elementBounds.width ||
+			y < elementBounds.top ||
+			y > elementBounds.top + elementBounds.height) {
+			onTrackStop()
+		} else {
+			onTrack(x, y)
+		}
+	}
+	function onPointerMove(event) {
+		onTrack(event.clientX, event.clientY)
+	}
+	function onTrackStop() {
+		element.removeEventListener('pointermove', onPointerMove)
+		element.removeEventListener('pointerleave', onTrackStop)
+		element.removeEventListener('pointercancel', onTrackStop)
+		element.removeEventListener('touchmove', onTouchMove)
+		element.removeEventListener('touchend', onTrackStop)
+		element.removeEventListener('touchcancel', onTrackStop)
+		_onTrackStop()
+	}
+	function onPointerEnter() {
+		onTrackStart()
+		element.addEventListener('pointermove', onPointerMove)
+		element.addEventListener('pointerleave', onTrackStop)
+		element.addEventListener('pointercancel', onTrackStop)
+	}
+	element.addEventListener('pointerenter', onPointerEnter)
+	return () => {
+		onTrackStop()
+		element.removeEventListener(onPointerEnter)
+		element.removeEventListener(onTouchStart)
+	}
+}
