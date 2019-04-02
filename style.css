@@ -106,12 +106,13 @@
 	transition: all var(--chartogram-night-mode-transition-duration);
 }
 
-.chartogram__plan-container {
-	/* For tooltip. */
-	position: relative;
-}
-
 .chartogram__plan-with-axes {
+	overflow: hidden;
+	/* Side padding added to prevent graph (and tooltip points) cutting and sides. */
+	margin-left: calc(-1 * var(--chartogram-stroke-width-bold) * 5 / 2);
+	margin-right: calc(-1 * var(--chartogram-stroke-width-bold) * 5 / 2);
+	padding-left: calc(var(--chartogram-stroke-width-bold) * 5 / 2);
+	padding-right: calc(var(--chartogram-stroke-width-bold) * 5 / 2);
 	/* Padding bottom added for the X axis labels. */
 	padding-bottom: calc(var(--chartogram-x-axis-labels-padding-top) + var(--chartogram-font-size));
 }
