@@ -76,7 +76,7 @@ export default class Timeline {
 	}
 
 	render() {
-		const { canvasWidth, y, yScale, data, maxYGlobal, fixSvgCoordinate, createPolylinePoints } = this.props
+		const { canvasWidth, y, data, maxYGlobal, fixSvgCoordinate, createPolylinePoints } = this.props
 		const { aspectRatio } = this.state
 		// Clear canvas.
 		clearElement(this.timelineCanvas)
@@ -90,7 +90,7 @@ export default class Timeline {
 				graph.setAttribute('stroke', color)
 				graph.setAttribute('points', createPolylinePoints(
 					_x.map(this.mapX),
-					_y.map(y => this.mapY(maxYGlobal - y * yScale))
+					_y.map(y => this.mapY(maxYGlobal - y))
 				).join(' '))
 				graph.classList.add('chartogram__graph')
 				this.timelineCanvas.appendChild(graph)

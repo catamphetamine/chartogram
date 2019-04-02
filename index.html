@@ -299,6 +299,7 @@
 		<button type="button" id="night-mode-switch" class="chartogram__reset-button"></button>
 
 		<script>
+			let unmount
 			let selectedDatasetId = 0
 			const chartogramNode = document.querySelector('#chartogram')
 
@@ -330,10 +331,10 @@
 					}
 					i++
 				}
-				chartogram(chartogramNode, data, 'Followers')
+				return chartogram(chartogramNode, data, 'Followers')
 			}
 
-			drawChartogram()
+			unmount = drawChartogram()
 			setUpDatasetSelector()
 			setUpNightModeSwitch()
 
@@ -352,8 +353,11 @@
 					i++
 				}
 				datasetSelector.addEventListener('change', function() {
+					if (unmount) {
+						unmount()
+					}
 					selectedDatasetId = datasetSelector.value
-					drawChartogram()
+					unmount = drawChartogram()
 				})
 			}
 

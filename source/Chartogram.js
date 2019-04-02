@@ -15,6 +15,8 @@ export default class Chartogram {
 	constructor(rootNode, data, title = 'Title', props = {}) {
 		this.props = {
 			title,
+			transitionDuration: 300,
+			transitionEasing: 'easeInOutSin',
 			gaugeTickMarksCount: 6,
 			timelineWindowSize: 40,
 			canvasWidth: 512,
@@ -72,6 +74,7 @@ export default class Chartogram {
 	}
 
 	componentWillUnmount() {
+		this.timeline.componentWillUnmount()
 		this.rootNode.classList.remove('chartogram')
 		clearElement(this.rootNode)
 		// Remove window resize event listener.
@@ -121,7 +124,6 @@ export default class Chartogram {
 			minYGlobal: this.state.minYGlobal,
 			maxYGlobal: this.state.maxYGlobal,
 			y: this.state.y,
-			yScale: this.state.yScale,
 			onChangeBounds: this.onChangeBounds
 		}
 	}
@@ -169,8 +171,7 @@ export default class Chartogram {
 		return {
 			...this.createState(fromRatio, toRatio),
 			aspectRatio: this.getCanvasAspectRatio(),
-			canvasWidthPx: this.getCanvasWidthPx(),
-			yScale: 1
+			canvasWidthPx: this.getCanvasWidthPx()
 		}
 	}
 
@@ -286,9 +287,10 @@ export default class Chartogram {
 		}
 		y.isShown = !y.isShown
 		this.setState({
-			y: this.state.y,
-			...this.calculateMinMaxY(this.state.y)
+			y: this.state.y
 		})
+		const { minY, maxY, minYGlobal, maxYGlobal } = this.calculateMinMaxY(this.state.y)
+		this.transitionState(minY, maxY, minYGlobal, maxYGlobal)
 		return true
 	}
 
@@ -321,7 +323,7 @@ export default class Chartogram {
 
 	render() {
 		const { canvasWidth, gaugeTickMarksCount } = this.props
-		const { minX, maxX, minY, maxY, yScale, xGraphPoints, aspectRatio } = this.state
+		const { minX, maxX, minY, maxY, xGraphPoints, aspectRatio } = this.state
 		// Clear canvas.
 		clearElement(this.canvas)
 		// Set canvas `viewBox`.
@@ -343,7 +345,7 @@ export default class Chartogram {
 				graph.setAttribute('stroke', color)
 				graph.setAttribute('points', this.createPolylinePoints(
 					xGraphPoints.map(this.mapX),
-					graphPoints.map(y => this.mapY(maxY - y * yScale))
+					graphPoints.map(y => this.mapY(maxY - y))
 				).join(' '))
 				graph.classList.add('chartogram__graph')
 				this.canvas.appendChild(graph)
@@ -362,35 +364,64 @@ export default class Chartogram {
 		)
 	}
 
-	// animateScale(scale) {
-	// 	this.setState({
-	// 		yScaleFrom: this.state.yScale,
-	// 		yScale,
-	// 		yScaleTransitionStartedAt: Date.now()
-	// 	}) = scale
-	// 	requestAnimationFrame(this.transitionScaleTick)
-	// }
+	transitionState(minY, maxY, minYGlobal, maxYGlobal) {
+		if (this.transition) {
+			cancelAnimationFrame(this.transition)
+		}
+		this.setState({
+			minYFrom: this.state.minY,
+			maxYFrom: this.state.maxY,
+			minYTo: minY,
+			maxYTo: maxY,
+			minYGlobalFrom: this.state.minYGlobal,
+			maxYGlobalFrom: this.state.maxYGlobal,
+			minYGlobalTo: minYGlobal,
+			maxYGlobalTo: maxYGlobal,
+			transitionStartedAt: Date.now()
+		})
+		// Place in a `setState()` callback in case of React.
+		this.transition = requestAnimationFrame(this.transitionStateTick)
+	}
 
-	// transitionScaleTick = () => {
-	// 	const { yScaleTransitionStartedAt, yScaleFrom, yScale } = this.state
-	// 	const elapsed = Date.now() - yScaleTransitionStartedAt
-	// 	const ratio = Math.min(elapsed / 300, 1)
-	// 	this.setState({
-	// 		yScaleTransitioned: yScaleFrom + (yScale - yScaleFrom) * ratio
-	// 	})
-	// 	if (ratio < 1) {
-	// 		requestAnimationFrame(this.transitionScaleTick)
-	// 	}
-	// }
+	transitionStateTick = () => {
+		const {
+			transitionDuration,
+			transitionEasing
+		} = this.props
+		const {
+			transitionStartedAt,
+			minYFrom,
+			minYTo,
+			maxYFrom,
+			maxYTo,
+			minYGlobalFrom,
+			minYGlobalTo,
+			maxYGlobalFrom,
+			maxYGlobalTo
+		} = this.state
+		const elapsed = Date.now() - transitionStartedAt
+		const ratio = EASING[transitionEasing](Math.min(elapsed / transitionDuration, 1))
+		this.setState({
+			minY: minYFrom + (minYTo - minYFrom) * ratio,
+			maxY: maxYFrom + (maxYTo - maxYFrom) * ratio,
+			minYGlobal: minYGlobalFrom + (minYGlobalTo - minYGlobalFrom) * ratio,
+			maxYGlobal: maxYGlobalFrom + (maxYGlobalTo - maxYGlobalFrom) * ratio
+		})
+		if (ratio < 1) {
+			this.transition = requestAnimationFrame(this.transitionStateTick)
+		} else {
+			this.transition = undefined
+		}
+	}
 
 	createGridLine = (y) => {
-		const { minX, maxX, minY, maxY, yScale } = this.state
+		const { minX, maxX, minY, maxY } = this.state
 		const line = document.createElement('line')
 		line.classList.add('chartogram__grid-line')
 		line.setAttribute('x1', this.fixSvgCoordinate(this.mapX(minX)))
 		line.setAttribute('x2', this.fixSvgCoordinate(this.mapX(maxX)))
-		line.setAttribute('y1', this.fixSvgCoordinate(this.mapY(maxY - yScale * y)))
-		line.setAttribute('y2', this.fixSvgCoordinate(this.mapY(maxY - yScale * y)))
+		line.setAttribute('y1', this.fixSvgCoordinate(this.mapY(maxY - y)))
+		line.setAttribute('y2', this.fixSvgCoordinate(this.mapY(maxY - y)))
 		return line
 	}
 
@@ -449,3 +480,9 @@ const INITIAL_MARKUP = `
 		</div>
 	</div>
 `
+
+const EASING = {
+	easeInOutSin(x) {
+		return (1 + Math.sin(Math.PI * x - Math.PI / 2)) / 2
+	}
+}
