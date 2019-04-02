@@ -16,7 +16,7 @@ export default class Chartogram {
 		this.props = {
 			title,
 			transitionDuration: 300,
-			transitionEasing: 'easeInOutSin',
+			transitionEasing: 'easeOutQuad',
 			gaugeTickMarksCount: 6,
 			timelineWindowSize: 40,
 			canvasWidth: 512,
@@ -124,6 +124,7 @@ export default class Chartogram {
 			minYGlobal: this.state.minYGlobal,
 			maxYGlobal: this.state.maxYGlobal,
 			y: this.state.y,
+			graphOpacity: this.state.graphOpacity,
 			onChangeBounds: this.onChangeBounds
 		}
 	}
@@ -171,7 +172,8 @@ export default class Chartogram {
 		return {
 			...this.createState(fromRatio, toRatio),
 			aspectRatio: this.getCanvasAspectRatio(),
-			canvasWidthPx: this.getCanvasWidthPx()
+			canvasWidthPx: this.getCanvasWidthPx(),
+			graphOpacity: this.data.y.map(_ => 1)
 		}
 	}
 
@@ -290,7 +292,13 @@ export default class Chartogram {
 			y: this.state.y
 		})
 		const { minY, maxY, minYGlobal, maxYGlobal } = this.calculateMinMaxY(this.state.y)
-		this.transitionState(minY, maxY, minYGlobal, maxYGlobal)
+		this.transitionState(
+			minY,
+			maxY,
+			minYGlobal,
+			maxYGlobal,
+			this.state.y.map(y => y.isShown ? 1 : 0)
+		)
 		return true
 	}
 
@@ -323,7 +331,7 @@ export default class Chartogram {
 
 	render() {
 		const { canvasWidth, gaugeTickMarksCount } = this.props
-		const { minX, maxX, minY, maxY, xGraphPoints, aspectRatio } = this.state
+		const { minX, maxX, minY, maxY, xGraphPoints, aspectRatio, graphOpacity } = this.state
 		// Clear canvas.
 		clearElement(this.canvas)
 		// Set canvas `viewBox`.
@@ -338,9 +346,12 @@ export default class Chartogram {
 			this.canvas.appendChild(this.createGridLine(y))
 		}
 		// Draw charts.
-		for (const { color, graphPoints, isShown } of this.state.y) {
+		let i = 0
+		while (i < this.state.y.length) {
+			const { color, graphPoints, isShown } = this.state.y[i]
+			const opacity = graphOpacity[i]
 			// Draw chart.
-			if (isShown) {
+			if (isShown || opacity > 0) {
 				const graph = document.createElement('polyline')
 				graph.setAttribute('stroke', color)
 				graph.setAttribute('points', this.createPolylinePoints(
@@ -348,8 +359,12 @@ export default class Chartogram {
 					graphPoints.map(y => this.mapY(maxY - y))
 				).join(' '))
 				graph.classList.add('chartogram__graph')
+				if (opacity !== 1) {
+					graph.style.opacity = opacity
+				}
 				this.canvas.appendChild(graph)
 			}
+			i++
 		}
 		// A workaround to fix WebKit bug when it's not re-rendering the <svg/>.
 		// https://stackoverflow.com/questions/30905493/how-to-force-webkit-to-update-svg-use-elements-after-changes-to-original
@@ -364,11 +379,19 @@ export default class Chartogram {
 		)
 	}
 
-	transitionState(minY, maxY, minYGlobal, maxYGlobal) {
+	transitionState(minY, maxY, minYGlobal, maxYGlobal, graphOpacity) {
+		const { transitionDuration: maxTransitionDuration } = this.props
 		if (this.transition) {
 			cancelAnimationFrame(this.transition)
 		}
+		const heightBefore = this.state.maxY - this.state.minY
+		const deltaMaxY = Math.abs(maxY - this.state.maxY) / heightBefore
+		const deltaMinY = Math.abs(minY - this.state.minY) / heightBefore
+		const deltaY = Math.max(deltaMinY, deltaMaxY)
+		const transitionDuration = maxTransitionDuration * Math.max(0.1, Math.min(deltaY, 0.5) * 2)
 		this.setState({
+			graphOpacityFrom: this.state.graphOpacity,
+			graphOpacityTo: graphOpacity,
 			minYFrom: this.state.minY,
 			maxYFrom: this.state.maxY,
 			minYTo: minY,
@@ -377,7 +400,8 @@ export default class Chartogram {
 			maxYGlobalFrom: this.state.maxYGlobal,
 			minYGlobalTo: minYGlobal,
 			maxYGlobalTo: maxYGlobal,
-			transitionStartedAt: Date.now()
+			transitionStartedAt: Date.now(),
+			transitionDuration
 		})
 		// Place in a `setState()` callback in case of React.
 		this.transition = requestAnimationFrame(this.transitionStateTick)
@@ -385,11 +409,13 @@ export default class Chartogram {
 
 	transitionStateTick = () => {
 		const {
-			transitionDuration,
 			transitionEasing
 		} = this.props
 		const {
 			transitionStartedAt,
+			transitionDuration,
+			graphOpacityFrom,
+			graphOpacityTo,
 			minYFrom,
 			minYTo,
 			maxYFrom,
@@ -400,8 +426,10 @@ export default class Chartogram {
 			maxYGlobalTo
 		} = this.state
 		const elapsed = Date.now() - transitionStartedAt
-		const ratio = EASING[transitionEasing](Math.min(elapsed / transitionDuration, 1))
+		let ratio = Math.min(elapsed / transitionDuration, 1)
+		ratio = EASING[transitionEasing](ratio)
 		this.setState({
+			graphOpacity: graphOpacityTo.map((_, i) => graphOpacityFrom[i] + (graphOpacityTo[i] - graphOpacityFrom[i]) * ratio),
 			minY: minYFrom + (minYTo - minYFrom) * ratio,
 			maxY: maxYFrom + (maxYTo - maxYFrom) * ratio,
 			minYGlobal: minYGlobalFrom + (minYGlobalTo - minYGlobalFrom) * ratio,
@@ -481,8 +509,24 @@ const INITIAL_MARKUP = `
 	</div>
 `
 
+// https://gist.github.com/gre/1650294
 const EASING = {
-	easeInOutSin(x) {
-		return (1 + Math.sin(Math.PI * x - Math.PI / 2)) / 2
-	}
+	linear(t) {
+		return t
+	},
+	easeInOutSin(t) {
+		return (1 + Math.sin(Math.PI * t - Math.PI / 2)) / 2
+	},
+	easeInOutQuad(t) {
+		return t<.5 ? 2*t*t : -1+(4-2*t)*t
+	},
+  easeInOutCubic(t) {
+  	return t<.5 ? 4*t*t*t : (t-1)*(2*t-2)*(2*t-2)+1
+  },
+  easeOutCubic(t) {
+  	return (--t)*t*t+1
+  },
+  easeOutQuad(t) {
+  	return t*(2-t)
+  }
 }

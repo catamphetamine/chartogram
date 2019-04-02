@@ -76,15 +76,19 @@ export default class Timeline {
 	}
 
 	render() {
-		const { canvasWidth, y, data, maxYGlobal, fixSvgCoordinate, createPolylinePoints } = this.props
+		const { canvasWidth, y, data, maxYGlobal, fixSvgCoordinate, createPolylinePoints, graphOpacity } = this.props
 		const { aspectRatio } = this.state
 		// Clear canvas.
 		clearElement(this.timelineCanvas)
 		// Set canvas `viewBox`.
 		this.timelineCanvas.setAttribute('viewBox', `0 0 ${canvasWidth} ${fixSvgCoordinate(canvasWidth / aspectRatio)}`)
-		for (const { id, color, points } of data.y) {
+		// Draw graphs.
+		let i = 0
+		while (i < data.y.length) {
+			const { id, color, points } = data.y[i]
+			const opacity = graphOpacity[i]
 			const isShown = y.find(_ => _.id === id).isShown
-			if (isShown) {
+			if (isShown || opacity > 0) {
 				const [_x, _y] = simplifyGraph(data.x.points, points, 80)
 				const graph = document.createElement('polyline')
 				graph.setAttribute('stroke', color)
@@ -93,8 +97,12 @@ export default class Timeline {
 					_y.map(y => this.mapY(maxYGlobal - y))
 				).join(' '))
 				graph.classList.add('chartogram__graph')
+				if (opacity !== 1) {
+					graph.style.opacity = opacity
+				}
 				this.timelineCanvas.appendChild(graph)
 			}
+			i++
 		}
 		// A workaround to fix WebKit bug when it's not re-rendering the <svg/>.
 		// https://stackoverflow.com/questions/30905493/how-to-force-webkit-to-update-svg-use-elements-after-changes-to-original

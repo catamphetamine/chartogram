@@ -72,10 +72,11 @@ export default class Tooltip {
 				let left = xRatio * canvasWidthPx
 				left -= 40
 				const tooltipWidth = this.tooltip.getBoundingClientRect().width
-				if (left < 0) {
-					left = 0
-				} else if (left + tooltipWidth > canvasWidthPx) {
-					left = canvasWidthPx - tooltipWidth
+				const overflow = 5
+				if (left < -1 * overflow) {
+					left = -1 * overflow
+				} else if (left + tooltipWidth > canvasWidthPx + overflow) {
+					left = (canvasWidthPx + overflow) - tooltipWidth
 				}
 				this.tooltip.style.left = left + 'px'
 				this.updatePoints(xIndex, xRatio)
@@ -145,6 +146,12 @@ export default class Tooltip {
 	}
 
 	mount() {
+		this.renderTooltip()
+		this.renderLine()
+		this.renderPoints()
+	}
+
+	renderTooltip() {
 		const { y, container } = this.props
 		// Create tooltip.
 		this.tooltip = document.createElement('div')
@@ -177,7 +184,7 @@ export default class Tooltip {
 		const { canvas } = this.props
 		const xmlns = 'http://www.w3.org/2000/svg'
 		this.line = document.createElementNS(xmlns, 'line')
-		this.line.setAttributeNS(null, 'class', 'chartogram__tooltip-line')
+		this.line.setAttribute('class', 'chartogram__tooltip-line')
 		canvas.insertBefore(this.line, canvas.querySelector('polyline'))
 	}
 
@@ -222,9 +229,6 @@ export default class Tooltip {
 
 	updateLine = (x) => {
 		const { canvasWidth, aspectRatio, fixSvgCoordinate, mapX } = this.props
-		if (!this.line) {
-			this.renderLine()
-		}
 		this.line.setAttributeNS(null, 'x1', fixSvgCoordinate(mapX(x)))
 		this.line.setAttributeNS(null, 'x2', fixSvgCoordinate(mapX(x)))
 		this.line.setAttributeNS(null, 'y1', 0)
@@ -233,9 +237,6 @@ export default class Tooltip {
 
 	updatePoints = (xIndex, xRatio) => {
 		const { maxY, y } = this.props
-		if (!this.points) {
-			this.renderPoints()
-		}
 		let i = 0
 		let j = 0
 		while (i < y.length) {
