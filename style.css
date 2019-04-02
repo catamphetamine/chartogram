@@ -210,9 +210,6 @@
 
 .chartogram__tooltip {
 	position: absolute;
-	display: flex;
-	align-items: center;
-	flex-direction: column;
 	border-radius: 0.35em;
 	padding-top: 0.6em;
 	padding-bottom: 0.5em;
@@ -220,7 +217,6 @@
 	padding-right: 0.85em;
 	box-shadow: 0 1px 0.2em rgba(0,0,0,0.18);
 	background-color: var(--chartogram-tooltip-background-color);
-	transform: translateX(-50%);
 	z-index: 1;
 	/* So that hovering it doesn't result in 'pointerleave' event on canvas. */
 	pointer-events: none;
@@ -229,7 +225,6 @@
 .chartogram__tooltip-header {
 	font-weight: bolder;
 	font-size: 110%;
-	text-align: center;
 	margin-top: 0;
 	margin-bottom: 0.8em;
 	white-space: nowrap;
