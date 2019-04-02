@@ -130,22 +130,7 @@ export default class Chartogram {
 		return {
 			rootNode: this.rootNode,
 			data: this.data,
-			onToggle: (id) => {
-				const y = this.state.y.find(_ => _.id === id)
-				// Won't allow hiding all graphs.
-				if (y.isShown) {
-					const graphsShown = this.state.y.filter(_ => _.isShown)
-					if (graphsShown.length === 1) {
-						return
-					}
-				}
-				y.isShown = !y.isShown
-				this.setState({
-					y: this.state.y,
-					...this.calculateMinMaxY(this.state.y)
-				})
-				return true
-			}
+			onToggle: this.onToggle
 		}
 	}
 
@@ -288,6 +273,23 @@ export default class Chartogram {
 			minYGlobal,
 			maxYGlobal
 		}
+	}
+
+	onToggle = (id) => {
+		const y = this.state.y.find(_ => _.id === id)
+		// Won't allow hiding all graphs.
+		if (y.isShown) {
+			const graphsShown = this.state.y.filter(_ => _.isShown)
+			if (graphsShown.length === 1) {
+				return
+			}
+		}
+		y.isShown = !y.isShown
+		this.setState({
+			y: this.state.y,
+			...this.calculateMinMaxY(this.state.y)
+		})
+		return true
 	}
 
 	onChangeBounds = (from, to) => {

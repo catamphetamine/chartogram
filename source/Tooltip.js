@@ -15,7 +15,6 @@ export default class Tooltip {
 	componentDidUpdate(props) {
 		if (this.props !== props) {
 			this.props = props
-			this.render()
 		}
 	}
 
@@ -57,7 +56,7 @@ export default class Tooltip {
 			if (x !== this.tooltipForX) {
 				this.tooltipForX = x
 				if (!this.tooltip) {
-					this.render()
+					this.mount()
 				}
 				const date = new Date(x)
 				this.tooltipDate.textContent = `${weekdays[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}`
@@ -145,7 +144,7 @@ export default class Tooltip {
 		}
 	}
 
-	render() {
+	mount() {
 		const { y, container } = this.props
 		// Create tooltip.
 		this.tooltip = document.createElement('div')
