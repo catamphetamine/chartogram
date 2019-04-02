@@ -7,8 +7,8 @@ export default class Togglers {
 		this.props = props
 	}
 
-	componentDidMount() {
-		const { rootNode, data } = this.props
+	componentDidMount(rootNode) {
+		const { data } = this.props
 		// Add graph togglers.
 		const graphTogglers = rootNode.querySelector('.chartogram__chart-togglers')
 		clearElement(graphTogglers)

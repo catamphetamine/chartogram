@@ -14,20 +14,15 @@ export default class Timeline {
 		this.props = props
 	}
 
-	componentDidUpdate(props) {
-		if (this.props !== props) {
-			this.props = props
-			this.state = {
-				aspectRatio: this.getCanvasAspectRatio()
-			}
-			this.onChangeBounds(this.props.fromRatio, this.props.toRatio),
-			this.render()
+	componentDidUpdate() {
+		this.state = {
+			aspectRatio: this.getCanvasAspectRatio()
 		}
+		this.onChangeBounds(this.props.fromRatio, this.props.toRatio),
+		this.render()
 	}
 
-	componentDidMount() {
-		const { rootNode } = this.props
-
+	componentDidMount(rootNode) {
 		this.timeline = rootNode.querySelector('.chartogram__timeline')
 		this.timelineOverlayLeft = rootNode.querySelector('.chartogram__timeline-overlay-left')
 		this.timelineWindowLeftHandle = rootNode.querySelector('.chartogram__timeline-window__left-handle')

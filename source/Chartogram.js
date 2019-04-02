@@ -1,16 +1,11 @@
 import {
 	clearElement,
-	commaJoin,
-	getLowerSiblingDivisibleBy,
-	divideInterval,
-	throttle
+	commaJoin
 } from './utility'
 
+import Charts from './Charts'
 import Timeline from './Timeline'
 import Togglers from './Togglers'
-import Tooltip from './Tooltip'
-
-const SVG_XMLNS = 'http://www.w3.org/2000/svg'
 
 export default class Chartogram {
 	constructor(rootNode, data, title = 'Title', props = {}) {
@@ -45,82 +40,72 @@ export default class Chartogram {
 		this.rootNode.classList.add('chartogram')
 
 		this.rootNode.innerHTML = `
-			${INITIAL_MARKUP.replace('{title}', this.props.title)}
+			<header class="chartogram__header">
+				<h1 class="chartogram__title">${this.props.title}</h1>
+			</header>
+			${Charts.INITIAL_MARKUP}
 			${Timeline.INITIAL_MARKUP}
 			${Togglers.INITIAL_MARKUP}
 		`
 
-		this.tooltipContainer = this.rootNode.querySelector('.chartogram__plan')
-		this.canvas = this.rootNode.querySelector('.chartogram__canvas')
-		this.canvasWrapper = this.rootNode.querySelector('.chartogram__canvas-wrapper')
-		this.xAxis = this.rootNode.querySelector('.chartogram__x')
-		this.yAxis = this.rootNode.querySelector('.chartogram__y')
-
 		// Render will be called after `.componentDidMount()`.
 		this.state = this.getInitialState()
-		this.updateAspectRatio()
+
+		this.charts = new Charts(this.getChartsProps())
+		this.charts.componentDidMount(this.rootNode)
 
 		this.timeline = new Timeline(this.getTimelineProps())
-		this.timeline.componentDidMount()
+		this.timeline.componentDidMount(this.rootNode)
 
 		this.togglers = new Togglers(this.getTogglersProps())
-		this.togglers.componentDidMount()
-
-		this.tooltip = new Tooltip(this.getTooltipProps())
-		this.tooltip.componentDidMount()
-
-		this.mountGridLines()
-		this.mountGauges()
-		this.mountGraphs()
-
-		// Add window resize event listener.
-		window.addEventListener('resize', this.onResizeThrottled)
-
-		this.render()
+		this.togglers.componentDidMount(this.rootNode)
 	}
 
 	componentWillUnmount() {
+		this.charts.componentWillUnmount()
 		this.timeline.componentWillUnmount()
 		this.rootNode.classList.remove('chartogram')
 		clearElement(this.rootNode)
-		// Remove window resize event listener.
-		window.removeEventListener('resize', this.onResizeThrottled)
 		if (this.transition) {
 			cancelAnimationFrame(this.transition)
 		}
 	}
 
-	onResize = (event) => {
-		this.setState({
-			aspectRatio: this.getCanvasAspectRatio()
-		}, false)
-	}
-
-	onResizeThrottled = throttle(this.onResize, 33)
-
-	getCanvasAspectRatio() {
-		const canvasDimensions = this.canvas.getBoundingClientRect()
-		return canvasDimensions.width / canvasDimensions.height
-	}
-
-	setState(newState, renderTimeline = true) {
-		if (newState.aspectRatio !== this.state.aspectRatio) {
-			this.updateAspectRatio(newState.aspectRatio)
-		}
+	setState(newState) {
+		const previousState = this.state
 		this.state = {
 			...this.state,
 			...newState
 		}
-		this.render()
-		if (renderTimeline) {
-			this.timeline.componentDidUpdate(this.getTimelineProps())
+		this.componentDidUpdate(this.props, previousState)
+	}
+
+	componentDidUpdate(previousProps, previousState) {
+		this.charts.props = this.getChartsProps()
+		this.charts.componentDidUpdate()
+		if (this.shouldUpdateTimeline(previousState)) {
+			this.timeline.props = this.getTimelineProps()
+			this.timeline.componentDidUpdate()
 		}
-		this.tooltip.componentDidUpdate(this.getTooltipProps())
+	}
+
+	shouldUpdateTimeline(previousState) {
+		return this.state.graphOpacity !== previousState.graphOpacity ||
+			this.state.minYGlobal !== previousState.minYGlobal ||
+			this.state.maxYGlobal !== previousState.maxYGlobal
+	}
+
+	getChartsProps() {
+		return {
+			...this.props,
+			...this.state,
+			createPolylinePoints: this.createPolylinePoints,
+			fixSvgCoordinate: this.fixSvgCoordinate
+		}
 	}
 
 	getTimelineProps() {
 		return {
-			rootNode: this.rootNode,
 			data: this.data,
 			canvasWidth: this.props.canvasWidth,
 			fixSvgCoordinate: this.fixSvgCoordinate,
@@ -137,28 +122,8 @@ export default class Chartogram {
 
 	getTogglersProps() {
 		return {
-			rootNode: this.rootNode,
 			data: this.data,
 			onToggle: this.onToggle
-		}
-	}
-
-	getTooltipProps() {
-		return {
-			canvas: this.canvas,
-			container: this.tooltipContainer,
-			pointsContainer: this.canvasWrapper,
-			weekdays: this.props.weekdays,
-			months: this.props.months,
-			canvasWidth: this.props.canvasWidth,
-			aspectRatio: this.state.aspectRatio,
-			mapX: this.mapX,
-			fixSvgCoordinate: this.fixSvgCoordinate,
-			minX: this.state.minX,
-			maxX: this.state.maxX,
-			maxY: this.state.maxY,
-			xPoints: this.state.xPoints,
-			y: this.state.y
 		}
 	}
 
@@ -176,7 +141,6 @@ export default class Chartogram {
 		const toRatio = 1
 		return {
 			...this.createState(fromRatio, toRatio),
-			aspectRatio: this.getCanvasAspectRatio(),
 			graphOpacity: this.data.y.map(_ => 1)
 		}
 	}
@@ -291,11 +255,14 @@ export default class Chartogram {
 				return
 			}
 		}
+		// Mutating `this.state` without `setState()`.
 		y.isShown = !y.isShown
-		this.setState({
-			y: this.state.y
-		})
-		const { minY, maxY, minYGlobal, maxYGlobal } = this.calculateMinMaxY(this.state.y)
+		const {
+			minY,
+			maxY,
+			minYGlobal,
+			maxYGlobal
+		} = this.calculateMinMaxY(this.state.y)
 		this.transitionState(
 			minY,
 			maxY,
@@ -312,7 +279,7 @@ export default class Chartogram {
 		const maxY = state.maxY
 		delete state.minY
 		delete state.maxY
-		this.setState(state, false)
+		this.setState(state)
 		this.transitionState(minY, maxY)
 	}
 
@@ -325,121 +292,6 @@ export default class Chartogram {
 	fixSvgCoordinate = (x) => {
 		const { precisionFactor } = this.props
 		return Math.round(x * precisionFactor) / precisionFactor
-	}
-
-	mapX = (x) => {
-		const { canvasWidth } = this.props
-		const { minX, maxX } = this.state
-		return ((x - minX) / (maxX - minX)) * canvasWidth
-	}
-
-	mapY = (y) => {
-		const { canvasWidth } = this.props
-		const { minY, maxY, aspectRatio } = this.state
-		return ((y - minY) / (maxY - minY)) * canvasWidth / aspectRatio
-	}
-
-	updateAspectRatio(aspectRatio = this.state.aspectRatio) {
-		const { canvasWidth } = this.props
-		// Set canvas `viewBox`.
-		this.canvas.setAttribute('viewBox', `0 0 ${canvasWidth} ${this.fixSvgCoordinate(canvasWidth / aspectRatio)}`)
-	}
-
-	updateGridLine(i, y) {
-		const { maxY } = this.state
-		const line = this.gridLines[i]
-		line.setAttribute('y1', this.fixSvgCoordinate(this.mapY(maxY - y)))
-		line.setAttribute('y2', this.fixSvgCoordinate(this.mapY(maxY - y)))
-	}
-
-	render() {
-		const { gaugeTickMarksCount } = this.props
-		const { y, minX, maxX, minY, maxY, graphOpacity } = this.state
-		// Calculate grid lines' coordinates.
-		const minY_ = minY
-		const maxY_ = getLowerSiblingDivisibleBy(maxY, 10)
-		const yAxisScale = (maxY - minY) / (maxY_ - minY_)
-		const yAxisTickMarks = divideInterval(minY_, maxY_, gaugeTickMarksCount)
-		// Update grid lines.
-		yAxisTickMarks.forEach((y, i) => this.updateGridLine(i, y))
-		// Update graphs.
-		let i = 0
-		while (i < y.length) {
-			const { isShown, graphPoints, color } = y[i]
-			const opacity = graphOpacity[i]
-			// Update graph.
-			if (isShown || opacity > 0) {
-				if (this.graphs[i]) {
-					this.updateGraph(i, graphPoints, opacity)
-				} else {
-					this.mountGraph(i, graphPoints, color, opacity)
-				}
-			} else if (this.graphs[i]) {
-				this.unmountGraph(i)
-			}
-			i++
-		}
-		// Update gauges.
-		this.updateGauges(
-			minX,
-			maxX,
-			minY_,
-			maxY_,
-			yAxisScale
-		)
-	}
-
-	renderGraph(graphPoints, color, opacity = 1) {
-		const graph = document.createElementNS(SVG_XMLNS, 'polyline')
-		graph.setAttribute('stroke', color)
-		graph.classList.add('chartogram__graph')
-		this.updateGraph(graph, graphPoints, opacity)
-		return graph
-	}
-
-	mountGridLines() {
-		const { gaugeTickMarksCount } = this.props
-		this.gridLines = []
-		let i = 0
-		while (i < gaugeTickMarksCount) {
-			const line = this.renderGridLine(0)
-			this.gridLines.push(line)
-			this.canvas.appendChild(line)
-			i++
-		}
-	}
-
-	mountGraphs() {
-		this.graphs = []
-		const { y } = this.state
-		y.forEach(({ graphPoints, color }, i) => {
-			this.mountGraph(i, graphPoints, color)
-		})
-	}
-
-	mountGraph(i, graphPoints, color, opacity) {
-		const graph = this.renderGraph(graphPoints, color, opacity)
-		this.graphs[i] = graph
-		this.canvas.appendChild(graph)
-	}
-
-	unmountGraph(i) {
-		this.canvas.removeChild(this.graphs[i])
-		this.graphs[i] = undefined
-	}
-
-	updateGraph(graph, graphPoints, opacity) {
-		const { xGraphPoints, maxY } = this.state
-		if (typeof graph === 'number') {
-			graph = this.graphs[graph]
-		}
-		graph.setAttribute('points', this.createPolylinePoints(
-			xGraphPoints.map(this.mapX),
-			graphPoints.map(y => this.mapY(maxY - y))
-		).join(' '))
-		if (opacity !== 1) {
-			graph.style.opacity = opacity
-		}
 	}
 
 	transitionState(minY, maxY, minYGlobal, maxYGlobal, graphOpacity) {
@@ -477,9 +329,7 @@ export default class Chartogram {
 			state.minYGlobalTo = minYGlobal
 			state.maxYGlobalTo = maxYGlobal
 		}
-		const shouldUpdateTimeline = graphOpacity !== undefined || minYGlobal !== undefined
-		state.transitionUpdatesTimeline = shouldUpdateTimeline
-		this.setState(state, shouldUpdateTimeline)
+		this.setState(state)
 		// Place the following in a `setState()` callback in case of React.
 		this.transition = requestAnimationFrame(this.transitionStateTick)
 	}
@@ -491,7 +341,6 @@ export default class Chartogram {
 		const {
 			transitionStartedAt,
 			transitionDuration,
-			transitionUpdatesTimeline,
 			graphOpacityFrom,
 			graphOpacityTo,
 			minYFrom,
@@ -534,55 +383,11 @@ export default class Chartogram {
 				state.graphOpacityTo = undefined
 			}
 		}
-		this.setState(state, transitionUpdatesTimeline)
+		this.setState(state)
 		if (ratio < 1) {
 			this.transition = requestAnimationFrame(this.transitionStateTick)
 		} else {
 			this.transition = undefined
-		}
-	}
-
-	renderGridLine(y) {
-		const { minX, maxX, minY, maxY } = this.state
-		const line = document.createElementNS(SVG_XMLNS, 'line')
-		line.classList.add('chartogram__grid-line')
-		line.setAttribute('x1', this.fixSvgCoordinate(this.mapX(minX)))
-		line.setAttribute('x2', this.fixSvgCoordinate(this.mapX(maxX)))
-		line.setAttribute('y1', this.fixSvgCoordinate(this.mapY(maxY - y)))
-		line.setAttribute('y2', this.fixSvgCoordinate(this.mapY(maxY - y)))
-		return line
-	}
-
-	mountGauges() {
-		const { gaugeTickMarksCount } = this.props
-		let i = 0
-		while (i < gaugeTickMarksCount) {
-			this.xAxis.appendChild(document.createElement('div'))
-			this.yAxis.appendChild(document.createElement('div'))
-			i++
-		}
-	}
-
-	updateGauges(minX, maxX, minY, maxY, yAxisScale) {
-		const { months, gaugeTickMarksCount } = this.props
-		this.updateGauge(this.xAxis, minX, maxX, gaugeTickMarksCount, (timestamp) => {
-			const date = new Date(timestamp)
-			return `${months[date.getMonth()]} ${date.getDate()}`
-		})
-		this.updateGauge(this.yAxis, minY, maxY, gaugeTickMarksCount)
-		this.yAxis.style.height = `${100 / yAxisScale}%`
-	}
-
-	updateGauge(gauge, min, max, tickMarksCount, transform) {
-		let i = 0
-		while (i < tickMarksCount) {
-			const tickMark = gauge.childNodes[i]
-			let value = min + i * (max - min) / (tickMarksCount - 1)
-			if (transform) {
-				value = transform(value)
-			}
-			tickMark.textContent = value
-			i++
 		}
 	}
 }
@@ -611,24 +416,6 @@ const WEEKDAYS = [
 	'Fri',
 	'Sat'
 ]
-
-const INITIAL_MARKUP = `
-	<header class="chartogram__header">
-		<h1 class="chartogram__title">{title}</h1>
-	</header>
-	<div class="chartogram__plan-with-axes">
-		<div class="chartogram__plan">
-			<div class="chartogram__top-border"></div>
-			<div class="chartogram__canvas-wrapper">
-				<svg class="chartogram__canvas"></svg>
-				<div class="chartogram__x"></div>
-				<div class="chartogram__y-wrapper">
-					<div class="chartogram__y"></div>
-				</div>
-			</div>
-		</div>
-	</div>
-`
 
 // https://gist.github.com/gre/1650294
 const EASING = {

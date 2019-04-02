@@ -16,10 +16,8 @@ export default class Tooltip {
 		this.unmount()
 	}
 
-	componentDidUpdate(props) {
-		if (this.props !== props) {
-			this.props = props
-		}
+	componentDidUpdate() {
+		// Ignored.
 	}
 
 	setUpListener = () => {
