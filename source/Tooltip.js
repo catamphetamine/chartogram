@@ -1,5 +1,7 @@
 import { setUpTouchMove } from './utility'
 
+const SVG_XMLNS = 'http://www.w3.org/2000/svg'
+
 export default class Tooltip {
 	constructor(props) {
 		this.props = props
@@ -152,8 +154,7 @@ export default class Tooltip {
 	}
 
 	renderLine() {
-		const xmlns = 'http://www.w3.org/2000/svg'
-		const line = document.createElementNS(xmlns, 'line')
+		const line = document.createElementNS(SVG_XMLNS, 'line')
 		line.setAttribute('class', 'chartogram__tooltip-line')
 		return line
 	}

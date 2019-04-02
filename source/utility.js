@@ -31,20 +31,6 @@ export function divideInterval(min, max, GAUGE_TICK_MARKS_COUNT) {
 	return points
 }
 
-export function renderGaugeLabels(element, min, max, GAUGE_TICK_MARKS_COUNT, transform) {
-	let i = 0
-	while (i < GAUGE_TICK_MARKS_COUNT) {
-		const tickMark = document.createElement('div')
-		let value = min + i * (max - min) / (GAUGE_TICK_MARKS_COUNT - 1)
-		if (transform) {
-			value = transform(value)
-		}
-		tickMark.appendChild(document.createTextNode(value))
-		element.appendChild(tickMark)
-		i++
-	}
-}
-
 export function throttle(func, interval) {
 	let timeout
 	let executedAt = 0

@@ -3,13 +3,14 @@ import {
 	commaJoin,
 	getLowerSiblingDivisibleBy,
 	divideInterval,
-	throttle,
-	renderGaugeLabels
+	throttle
 } from './utility'
 
 import Timeline from './Timeline'
 import Togglers from './Togglers'
 import Tooltip from './Tooltip'
+
+const SVG_XMLNS = 'http://www.w3.org/2000/svg'
 
 export default class Chartogram {
 	constructor(rootNode, data, title = 'Title', props = {}) {
@@ -57,6 +58,7 @@ export default class Chartogram {
 
 		// Render will be called after `.componentDidMount()`.
 		this.state = this.getInitialState()
+		this.updateAspectRatio()
 
 		this.timeline = new Timeline(this.getTimelineProps())
 		this.timeline.componentDidMount()
@@ -66,6 +68,10 @@ export default class Chartogram {
 
 		this.tooltip = new Tooltip(this.getTooltipProps())
 		this.tooltip.componentDidMount()
+
+		this.mountGridLines()
+		this.mountGauges()
+		this.mountGraphs()
 
 		// Add window resize event listener.
 		window.addEventListener('resize', this.onResizeThrottled)
@@ -98,6 +104,9 @@ export default class Chartogram {
 	}
 
 	setState(newState, renderTimeline = true) {
+		if (newState.aspectRatio !== this.state.aspectRatio) {
+			this.updateAspectRatio(newState.aspectRatio)
+		}
 		this.state = {
 			...this.state,
 			...newState
@@ -118,8 +127,8 @@ export default class Chartogram {
 			createPolylinePoints: this.createPolylinePoints,
 			fromRatio: this.state.fromRatio,
 			toRatio: this.state.toRatio,
-			minYGlobal: this.state.minYGlobal,
-			maxYGlobal: this.state.maxYGlobal,
+			minY: this.state.minYGlobal,
+			maxY: this.state.maxYGlobal,
 			y: this.state.y,
 			graphOpacity: this.state.graphOpacity,
 			onChangeBounds: this.onChangeBounds
@@ -330,54 +339,107 @@ export default class Chartogram {
 		return ((y - minY) / (maxY - minY)) * canvasWidth / aspectRatio
 	}
 
-	render() {
-		const { canvasWidth, gaugeTickMarksCount } = this.props
-		const { minX, maxX, minY, maxY, xGraphPoints, aspectRatio, graphOpacity } = this.state
-		// Clear canvas.
-		clearElement(this.canvas)
+	updateAspectRatio(aspectRatio = this.state.aspectRatio) {
+		const { canvasWidth } = this.props
 		// Set canvas `viewBox`.
 		this.canvas.setAttribute('viewBox', `0 0 ${canvasWidth} ${this.fixSvgCoordinate(canvasWidth / aspectRatio)}`)
+	}
+
+	updateGridLine(i, y) {
+		const { maxY } = this.state
+		const line = this.gridLines[i]
+		line.setAttribute('y1', this.fixSvgCoordinate(this.mapY(maxY - y)))
+		line.setAttribute('y2', this.fixSvgCoordinate(this.mapY(maxY - y)))
+	}
+
+	render() {
+		const { gaugeTickMarksCount } = this.props
+		const { y, minX, maxX, minY, maxY, graphOpacity } = this.state
 		// Calculate grid lines' coordinates.
 		const minY_ = minY
 		const maxY_ = getLowerSiblingDivisibleBy(maxY, 10)
 		const yAxisScale = (maxY - minY) / (maxY_ - minY_)
 		const yAxisTickMarks = divideInterval(minY_, maxY_, gaugeTickMarksCount)
-		// Draw grid lines.
-		for (const y of yAxisTickMarks) {
-			this.canvas.appendChild(this.createGridLine(y))
-		}
-		// Draw charts.
+		// Update grid lines.
+		yAxisTickMarks.forEach((y, i) => this.updateGridLine(i, y))
+		// Update graphs.
 		let i = 0
-		while (i < this.state.y.length) {
-			const { color, graphPoints, isShown } = this.state.y[i]
+		while (i < y.length) {
+			const { isShown, graphPoints, color } = y[i]
 			const opacity = graphOpacity[i]
-			// Draw chart.
+			// Update graph.
 			if (isShown || opacity > 0) {
-				const graph = document.createElement('polyline')
-				graph.setAttribute('stroke', color)
-				graph.setAttribute('points', this.createPolylinePoints(
-					xGraphPoints.map(this.mapX),
-					graphPoints.map(y => this.mapY(maxY - y))
-				).join(' '))
-				graph.classList.add('chartogram__graph')
-				if (opacity !== 1) {
-					graph.style.opacity = opacity
+				if (this.graphs[i]) {
+					this.updateGraph(i, graphPoints, opacity)
+				} else {
+					this.mountGraph(i, graphPoints, color, opacity)
 				}
-				this.canvas.appendChild(graph)
+			} else if (this.graphs[i]) {
+				this.unmountGraph(i)
 			}
 			i++
 		}
-		// A workaround to fix WebKit bug when it's not re-rendering the <svg/>.
-		// https://stackoverflow.com/questions/30905493/how-to-force-webkit-to-update-svg-use-elements-after-changes-to-original
-		this.canvas.innerHTML += ''
-		// Draw gauges.
-		this.drawGauges(
+		// Update gauges.
+		this.updateGauges(
 			minX,
 			maxX,
 			minY_,
 			maxY_,
 			yAxisScale
 		)
+	}
+
+	renderGraph(graphPoints, color, opacity = 1) {
+		const graph = document.createElementNS(SVG_XMLNS, 'polyline')
+		graph.setAttribute('stroke', color)
+		graph.classList.add('chartogram__graph')
+		this.updateGraph(graph, graphPoints, opacity)
+		return graph
+	}
+
+	mountGridLines() {
+		const { gaugeTickMarksCount } = this.props
+		this.gridLines = []
+		let i = 0
+		while (i < gaugeTickMarksCount) {
+			const line = this.renderGridLine(0)
+			this.gridLines.push(line)
+			this.canvas.appendChild(line)
+			i++
+		}
+	}
+
+	mountGraphs() {
+		this.graphs = []
+		const { y } = this.state
+		y.forEach(({ graphPoints, color }, i) => {
+			this.mountGraph(i, graphPoints, color)
+		})
+	}
+
+	mountGraph(i, graphPoints, color, opacity) {
+		const graph = this.renderGraph(graphPoints, color, opacity)
+		this.graphs[i] = graph
+		this.canvas.appendChild(graph)
+	}
+
+	unmountGraph(i) {
+		this.canvas.removeChild(this.graphs[i])
+		this.graphs[i] = undefined
+	}
+
+	updateGraph(graph, graphPoints, opacity) {
+		const { xGraphPoints, maxY } = this.state
+		if (typeof graph === 'number') {
+			graph = this.graphs[graph]
+		}
+		graph.setAttribute('points', this.createPolylinePoints(
+			xGraphPoints.map(this.mapX),
+			graphPoints.map(y => this.mapY(maxY - y))
+		).join(' '))
+		if (opacity !== 1) {
+			graph.style.opacity = opacity
+		}
 	}
 
 	transitionState(minY, maxY, minYGlobal, maxYGlobal, graphOpacity) {
@@ -416,8 +478,10 @@ export default class Chartogram {
 			state.minYGlobalTo = minYGlobal
 			state.maxYGlobalTo = maxYGlobal
 		}
-		this.setState(state)
-		// Place in a `setState()` callback in case of React.
+		const shouldUpdateTimeline = graphOpacity !== undefined || minYGlobal !== undefined
+		state.transitionUpdatesTimeline = shouldUpdateTimeline
+		this.setState(state, shouldUpdateTimeline)
+		// Place the following in a `setState()` callback in case of React.
 		this.transition = requestAnimationFrame(this.transitionStateTick)
 	}
 
@@ -428,6 +492,7 @@ export default class Chartogram {
 		const {
 			transitionStartedAt,
 			transitionDuration,
+			transitionUpdatesTimeline,
 			graphOpacityFrom,
 			graphOpacityTo,
 			minYFrom,
@@ -470,7 +535,7 @@ export default class Chartogram {
 				state.graphOpacityTo = undefined
 			}
 		}
-		this.setState(state)
+		this.setState(state, transitionUpdatesTimeline)
 		if (ratio < 1) {
 			this.transition = requestAnimationFrame(this.transitionStateTick)
 		} else {
@@ -478,9 +543,9 @@ export default class Chartogram {
 		}
 	}
 
-	createGridLine = (y) => {
+	renderGridLine(y) {
 		const { minX, maxX, minY, maxY } = this.state
-		const line = document.createElement('line')
+		const line = document.createElementNS(SVG_XMLNS, 'line')
 		line.classList.add('chartogram__grid-line')
 		line.setAttribute('x1', this.fixSvgCoordinate(this.mapX(minX)))
 		line.setAttribute('x2', this.fixSvgCoordinate(this.mapX(maxX)))
@@ -489,16 +554,37 @@ export default class Chartogram {
 		return line
 	}
 
-	drawGauges = (minX, maxX, minY, maxY, yAxisScale) => {
-		const { gaugeTickMarksCount, months } = this.props
-		clearElement(this.xAxis)
-		clearElement(this.yAxis)
-		renderGaugeLabels(this.xAxis, minX, maxX, gaugeTickMarksCount, (timestamp) => {
+	mountGauges() {
+		const { gaugeTickMarksCount } = this.props
+		let i = 0
+		while (i < gaugeTickMarksCount) {
+			this.xAxis.appendChild(document.createElement('div'))
+			this.yAxis.appendChild(document.createElement('div'))
+			i++
+		}
+	}
+
+	updateGauges(minX, maxX, minY, maxY, yAxisScale) {
+		const { months, gaugeTickMarksCount } = this.props
+		this.updateGauge(this.xAxis, minX, maxX, gaugeTickMarksCount, (timestamp) => {
 			const date = new Date(timestamp)
 			return `${months[date.getMonth()]} ${date.getDate()}`
 		})
-		renderGaugeLabels(this.yAxis, minY, maxY, gaugeTickMarksCount)
+		this.updateGauge(this.yAxis, minY, maxY, gaugeTickMarksCount)
 		this.yAxis.style.height = `${100 / yAxisScale}%`
+	}
+
+	updateGauge(gauge, min, max, tickMarksCount, transform) {
+		let i = 0
+		while (i < tickMarksCount) {
+			const tickMark = gauge.childNodes[i]
+			let value = min + i * (max - min) / (tickMarksCount - 1)
+			if (transform) {
+				value = transform(value)
+			}
+			tickMark.textContent = value
+			i++
+		}
 	}
 }
 

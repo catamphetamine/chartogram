@@ -6,6 +6,9 @@ import {
 	setUpDrag
 } from './utility'
 
+const TIMELINE_GRAPH_MAX_POINTS = 80
+const SVG_XMLNS = 'http://www.w3.org/2000/svg'
+
 export default class Timeline {
 	constructor(props) {
 		this.props = props
@@ -38,6 +41,8 @@ export default class Timeline {
 			aspectRatio: this.getCanvasAspectRatio()
 		}
 
+		this.updateAspectRatio()
+
 		this.setUpTimelineWindowHandle('left')
 		this.setUpTimelineWindowHandle('right')
 		this.setUpTimelineWindow()
@@ -46,6 +51,9 @@ export default class Timeline {
 		window.addEventListener('resize', this.onResizeThrottled)
 
 		this.onChangeBounds(this.props.fromRatio, this.props.toRatio)
+
+		this.mountGraphs()
+
 		this.render()
 	}
 
@@ -63,11 +71,20 @@ export default class Timeline {
 	onResizeThrottled = throttle(this.onResize, 33)
 
 	setState = (newState) => {
+		if (newState.aspectRatio !== this.state.aspectRatio) {
+			this.updateAspectRatio(newState.aspectRatio)
+		}
 		this.state = {
 			...this.state,
 			...newState
 		}
 		this.render()
+	}
+
+	updateAspectRatio(aspectRatio = this.state.aspectRatio) {
+		const { canvasWidth, fixSvgCoordinate } = this.props
+		// Set canvas `viewBox`.
+		this.timelineCanvas.setAttribute('viewBox', `0 0 ${canvasWidth} ${fixSvgCoordinate(canvasWidth / aspectRatio)}`)
 	}
 
 	getCanvasAspectRatio() {
@@ -76,37 +93,67 @@ export default class Timeline {
 	}
 
 	render() {
-		const { canvasWidth, y, data, maxYGlobal, fixSvgCoordinate, createPolylinePoints, graphOpacity } = this.props
-		const { aspectRatio } = this.state
-		// Clear canvas.
-		clearElement(this.timelineCanvas)
-		// Set canvas `viewBox`.
-		this.timelineCanvas.setAttribute('viewBox', `0 0 ${canvasWidth} ${fixSvgCoordinate(canvasWidth / aspectRatio)}`)
-		// Draw graphs.
+		const { y, data, graphOpacity } = this.props
+		// Update graphs.
 		let i = 0
 		while (i < data.y.length) {
-			const { id, color, points } = data.y[i]
-			const opacity = graphOpacity[i]
+			const { id, points, color } = data.y[i]
 			const isShown = y.find(_ => _.id === id).isShown
+			const opacity = graphOpacity[i]
+			// Update graph.
 			if (isShown || opacity > 0) {
-				const [_x, _y] = simplifyGraph(data.x.points, points, 80)
-				const graph = document.createElement('polyline')
-				graph.setAttribute('stroke', color)
-				graph.setAttribute('points', createPolylinePoints(
-					_x.map(this.mapX),
-					_y.map(y => this.mapY(maxYGlobal - y))
-				).join(' '))
-				graph.classList.add('chartogram__graph')
-				if (opacity !== 1) {
-					graph.style.opacity = opacity
+				const [_x, _y] = simplifyGraph(data.x.points, points, TIMELINE_GRAPH_MAX_POINTS)
+				if (this.graphs[i]) {
+					this.updateGraph(i, _x, _y, opacity)
+				} else {
+					this.mountGraph(i, _x, _y, color, opacity)
 				}
-				this.timelineCanvas.appendChild(graph)
+			} else if (this.graphs[i]) {
+				this.unmountGraph(i)
 			}
 			i++
 		}
-		// A workaround to fix WebKit bug when it's not re-rendering the <svg/>.
-		// https://stackoverflow.com/questions/30905493/how-to-force-webkit-to-update-svg-use-elements-after-changes-to-original
-		this.timelineCanvas.innerHTML += ''
+	}
+
+	renderGraph(x, y, color, opacity = 1) {
+		const graph = document.createElementNS(SVG_XMLNS, 'polyline')
+		graph.setAttribute('stroke', color)
+		this.updateGraph(graph, x, y, opacity)
+		graph.classList.add('chartogram__graph')
+		return graph
+	}
+
+	mountGraphs() {
+		this.graphs = []
+		const { data } = this.props
+		data.y.forEach(({ points, color }, i) => {
+			this.mountGraph(i, data.x.points, points, color)
+		})
+	}
+
+	mountGraph(i, x, y, color, opacity) {
+		const graph = this.renderGraph(x, y, color, opacity)
+		this.graphs[i] = graph
+		this.timelineCanvas.appendChild(graph)
+	}
+
+	unmountGraph(i) {
+		this.timelineCanvas.removeChild(this.graphs[i])
+		this.graphs[i] = undefined
+	}
+
+	updateGraph(graph, x, y, opacity) {
+		const { maxY, createPolylinePoints } = this.props
+		if (typeof graph === 'number') {
+			graph = this.graphs[graph]
+		}
+		graph.setAttribute('points', createPolylinePoints(
+			x.map(this.mapX),
+			y.map(y => this.mapY(maxY - y))
+		).join(' '))
+		if (opacity !== 1) {
+			graph.style.opacity = opacity
+		}
 	}
 
 	onChangeBounds(from, to) {
@@ -128,9 +175,9 @@ export default class Timeline {
 	}
 
 	mapY = (y) => {
-		const { canvasWidth, minYGlobal, maxYGlobal } = this.props
+		const { canvasWidth, minY, maxY } = this.props
 		const { aspectRatio } = this.state
-		return ((y - minYGlobal) / (maxYGlobal - minYGlobal)) * canvasWidth / aspectRatio
+		return ((y - minY) / (maxY - minY)) * canvasWidth / aspectRatio
 	}
 
 	setUpTimelineWindowHandle = (side) => {
