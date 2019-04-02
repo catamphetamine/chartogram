@@ -446,6 +446,8 @@ export default class Chartogram {
 		const { transitionDuration: maxTransitionDuration } = this.props
 		if (this.transition) {
 			cancelAnimationFrame(this.transition)
+			this.transitionStateTick()
+			cancelAnimationFrame(this.transition)
 		}
 		let transitionDuration = maxTransitionDuration
 		if (minY !== undefined) {
@@ -454,9 +456,6 @@ export default class Chartogram {
 			const deltaMinY = Math.abs(minY - this.state.minY) / heightBefore
 			const deltaY = Math.max(deltaMinY, deltaMaxY)
 			transitionDuration = maxTransitionDuration * Math.max(0.2, Math.min(deltaY, 0.5) * 2)
-		}
-		if (!graphOpacity) {
-			transitionDuration /= 2
 		}
 		const state = {
 			transitionStartedAt: Date.now(),
