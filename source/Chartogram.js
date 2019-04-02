@@ -79,6 +79,9 @@ export default class Chartogram {
 		clearElement(this.rootNode)
 		// Remove window resize event listener.
 		window.removeEventListener('resize', this.onResizeThrottled)
+		if (this.transition) {
+			cancelAnimationFrame(this.transition)
+		}
 	}
 
 	onResize = (event) => {
@@ -295,7 +298,13 @@ export default class Chartogram {
 	}
 
 	onChangeBounds = (from, to) => {
-		this.setState(this.createState(from, to), false)
+		const state = this.createState(from, to)
+		const minY = state.minY
+		const maxY = state.maxY
+		delete state.minY
+		delete state.maxY
+		this.setState(state, false)
+		this.transitionState(minY, maxY)
 	}
 
 	createPolylinePoints = (x, y) => {
@@ -376,25 +385,35 @@ export default class Chartogram {
 		if (this.transition) {
 			cancelAnimationFrame(this.transition)
 		}
-		const heightBefore = this.state.maxY - this.state.minY
-		const deltaMaxY = Math.abs(maxY - this.state.maxY) / heightBefore
-		const deltaMinY = Math.abs(minY - this.state.minY) / heightBefore
-		const deltaY = Math.max(deltaMinY, deltaMaxY)
-		const transitionDuration = maxTransitionDuration * Math.max(0.2, Math.min(deltaY, 0.5) * 2)
-		this.setState({
-			graphOpacityFrom: this.state.graphOpacity,
-			graphOpacityTo: graphOpacity,
-			minYFrom: this.state.minY,
-			maxYFrom: this.state.maxY,
-			minYTo: minY,
-			maxYTo: maxY,
-			minYGlobalFrom: this.state.minYGlobal,
-			maxYGlobalFrom: this.state.maxYGlobal,
-			minYGlobalTo: minYGlobal,
-			maxYGlobalTo: maxYGlobal,
+		let transitionDuration = maxTransitionDuration
+		if (minY !== undefined) {
+			const heightBefore = this.state.maxY - this.state.minY
+			const deltaMaxY = Math.abs(maxY - this.state.maxY) / heightBefore
+			const deltaMinY = Math.abs(minY - this.state.minY) / heightBefore
+			const deltaY = Math.max(deltaMinY, deltaMaxY)
+			transitionDuration = maxTransitionDuration * Math.max(0.2, Math.min(deltaY, 0.5) * 2)
+		}
+		const state = {
 			transitionStartedAt: Date.now(),
 			transitionDuration
-		})
+		}
+		if (minY !== undefined) {
+			state.minYFrom = this.state.minY
+			state.maxYFrom = this.state.maxY
+			state.minYTo = minY
+			state.maxYTo = maxY
+		}
+		if (graphOpacity !== undefined) {
+			state.graphOpacityFrom = this.state.graphOpacity
+			state.graphOpacityTo = graphOpacity
+		}
+		if (minYGlobal !== undefined) {
+			state.minYGlobalFrom = this.state.minYGlobal
+			state.maxYGlobalFrom = this.state.maxYGlobal
+			state.minYGlobalTo = minYGlobal
+			state.maxYGlobalTo = maxYGlobal
+		}
+		this.setState(state)
 		// Place in a `setState()` callback in case of React.
 		this.transition = requestAnimationFrame(this.transitionStateTick)
 	}
@@ -420,13 +439,35 @@ export default class Chartogram {
 		const elapsed = Date.now() - transitionStartedAt
 		let ratio = Math.min(elapsed / transitionDuration, 1)
 		ratio = EASING[transitionEasing](ratio)
-		this.setState({
-			graphOpacity: graphOpacityTo.map((_, i) => graphOpacityFrom[i] + (graphOpacityTo[i] - graphOpacityFrom[i]) * ratio),
-			minY: minYFrom + (minYTo - minYFrom) * ratio,
-			maxY: maxYFrom + (maxYTo - maxYFrom) * ratio,
-			minYGlobal: minYGlobalFrom + (minYGlobalTo - minYGlobalFrom) * ratio,
-			maxYGlobal: maxYGlobalFrom + (maxYGlobalTo - maxYGlobalFrom) * ratio
-		})
+		const state = {}
+		if (minYTo !== undefined) {
+			state.minY = minYFrom + (minYTo - minYFrom) * ratio
+			state.maxY = maxYFrom + (maxYTo - maxYFrom) * ratio
+			if (ratio === 1) {
+				state.minYFrom = undefined
+				state.minYTo = undefined
+				state.maxYFrom = undefined
+				state.maxYTo = undefined
+			}
+		}
+		if (minYGlobalTo !== undefined) {
+			state.minYGlobal = minYGlobalFrom + (minYGlobalTo - minYGlobalFrom) * ratio
+			state.maxYGlobal = maxYGlobalFrom + (maxYGlobalTo - maxYGlobalFrom) * ratio
+			if (ratio === 1) {
+				state.minYGlobalFrom = undefined
+				state.minYGlobalTo = undefined
+				state.maxYGlobalFrom = undefined
+				state.maxYGlobalTo = undefined
+			}
+		}
+		if (graphOpacityTo !== undefined) {
+			state.graphOpacity = graphOpacityTo.map((_, i) => graphOpacityFrom[i] + (graphOpacityTo[i] - graphOpacityFrom[i]) * ratio)
+			if (ratio === 1) {
+				state.graphOpacityFrom = undefined
+				state.graphOpacityTo = undefined
+			}
+		}
+		this.setState(state)
 		if (ratio < 1) {
 			this.transition = requestAnimationFrame(this.transitionStateTick)
 		} else {
