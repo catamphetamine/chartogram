@@ -19,29 +19,8 @@ export default class Chartogram {
 			timelineWindowSize: 40,
 			canvasWidth: 512,
 			precisionFactor: Math.pow(10, props.precision || 3),
-			months: [
-				'Jan',
-				'Feb',
-				'Mar',
-				'Apr',
-				'May',
-				'Jun',
-				'Jul',
-				'Aug',
-				'Sep',
-				'Oct',
-				'Nov',
-				'Dec'
-			],
-			weekdays: [
-				'Sun',
-				'Mon',
-				'Tue',
-				'Wed',
-				'Thu',
-				'Fri',
-				'Sat'
-			],
+			months: MONTHS,
+			weekdays: WEEKDAYS,
 			...props
 		}
 
@@ -63,21 +42,7 @@ export default class Chartogram {
 		this.rootNode.classList.add('chartogram')
 
 		this.rootNode.innerHTML = `
-			<header class="chartogram__header">
-				<h1 class="chartogram__title">${this.props.title}</h1>
-			</header>
-			<div class="chartogram__plan-with-axes">
-				<div class="chartogram__plan">
-					<div class="chartogram__top-border"></div>
-					<div class="chartogram__canvas-wrapper">
-						<svg class="chartogram__canvas"></svg>
-						<div class="chartogram__x"></div>
-						<div class="chartogram__y-wrapper">
-							<div class="chartogram__y"></div>
-						</div>
-					</div>
-				</div>
-			</div>
+			${INITIAL_MARKUP.replace('{title}', this.props.title)}
 			${Timeline.INITIAL_MARKUP}
 			${Togglers.INITIAL_MARKUP}
 		`
@@ -115,7 +80,8 @@ export default class Chartogram {
 
 	onResize = (event) => {
 		this.setState({
-			aspectRatio: this.getCanvasAspectRatio()
+			aspectRatio: this.getCanvasAspectRatio(),
+			canvasWidthPx: this.getCanvasWidthPx()
 		}, false)
 	}
 
@@ -124,6 +90,11 @@ export default class Chartogram {
 	getCanvasAspectRatio() {
 		const canvasDimensions = this.canvas.getBoundingClientRect()
 		return canvasDimensions.width / canvasDimensions.height
+	}
+
+	getCanvasWidthPx() {
+		const canvasDimensions = this.canvas.getBoundingClientRect()
+		return canvasDimensions.width
 	}
 
 	setState(newState, renderTimeline = true) {
@@ -181,6 +152,7 @@ export default class Chartogram {
 	getTooltipProps() {
 		return {
 			canvas: this.canvas,
+			canvasWidthPx: this.state.canvasWidthPx,
 			container: this.tooltipContainer,
 			pointsContainer: this.canvasWrapper,
 			weekdays: this.props.weekdays,
@@ -212,6 +184,7 @@ export default class Chartogram {
 		return {
 			...this.createState(fromRatio, toRatio),
 			aspectRatio: this.getCanvasAspectRatio(),
+			canvasWidthPx: this.getCanvasWidthPx(),
 			yScale: 1
 		}
 	}
@@ -431,3 +404,46 @@ export default class Chartogram {
 		this.yAxis.style.height = `${100 / yAxisScale}%`
 	}
 }
+
+const MONTHS = [
+	'Jan',
+	'Feb',
+	'Mar',
+	'Apr',
+	'May',
+	'Jun',
+	'Jul',
+	'Aug',
+	'Sep',
+	'Oct',
+	'Nov',
+	'Dec'
+]
+
+const WEEKDAYS = [
+	'Sun',
+	'Mon',
+	'Tue',
+	'Wed',
+	'Thu',
+	'Fri',
+	'Sat'
+]
+
+const INITIAL_MARKUP = `
+	<header class="chartogram__header">
+		<h1 class="chartogram__title">{title}</h1>
+	</header>
+	<div class="chartogram__plan-with-axes">
+		<div class="chartogram__plan">
+			<div class="chartogram__top-border"></div>
+			<div class="chartogram__canvas-wrapper">
+				<svg class="chartogram__canvas"></svg>
+				<div class="chartogram__x"></div>
+				<div class="chartogram__y-wrapper">
+					<div class="chartogram__y"></div>
+				</div>
+			</div>
+		</div>
+	</div>
+`

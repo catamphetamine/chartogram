@@ -4,8 +4,12 @@ export default class Tooltip {
 	}
 
 	componentDidMount() {
-		this.setUpCanvasTooltipListener()
-		this.render()
+		this.unlisten = this.setUpListener()
+	}
+
+	componentWillUnmount() {
+		this.unlisten()
+		this.unmount()
 	}
 
 	componentDidUpdate(props) {
@@ -15,10 +19,8 @@ export default class Tooltip {
 		}
 	}
 
-	render() {}
-
-	setUpCanvasTooltipListener = () => {
-		const { canvas, weekdays, months } = this.props
+	setUpListener = () => {
+		const { canvas, canvasWidthPx, weekdays, months } = this.props
 		let canvasDimensions
 		let isIndexInBounds
 		const onTrack = (screenX) => {
@@ -36,7 +38,7 @@ export default class Tooltip {
 			let xIndex
 			if (xHigherIndex < 0) {
 				if (xLowerIndex < 0) {
-					return this.removeTooltip()
+					return this.unmount()
 				} else {
 					xIndex = xLowerIndex
 				}
@@ -55,7 +57,7 @@ export default class Tooltip {
 			if (x !== this.tooltipForX) {
 				this.tooltipForX = x
 				if (!this.tooltip) {
-					this.addTooltip()
+					this.render()
 				}
 				const date = new Date(x)
 				this.tooltipDate.textContent = `${weekdays[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}`
@@ -68,9 +70,17 @@ export default class Tooltip {
 					}
 				}
 				const xRatio = (x - minX) / (maxX - minX)
-				this.tooltip.style.left = `${xRatio * 100}%`
-				this.updateTooltipPoints(xIndex, xRatio)
-				this.updateTooltipLine(x)
+				let left = xRatio * canvasWidthPx
+				left -= 40
+				const tooltipWidth = this.tooltip.getBoundingClientRect().width
+				if (left < 0) {
+					left = 0
+				} else if (left + tooltipWidth > canvasWidthPx) {
+					left = canvasWidthPx - tooltipWidth
+				}
+				this.tooltip.style.left = left + 'px'
+				this.updatePoints(xIndex, xRatio)
+				this.updateLine(x)
 			}
 		}
 		const onTrackStart = () => {
@@ -119,7 +129,7 @@ export default class Tooltip {
 			canvas.removeEventListener('touchmove', onTouchMove)
 			canvas.removeEventListener('touchend', onTrackStop)
 			canvas.removeEventListener('touchcancel', onTrackStop)
-			this.removeTooltip()
+			this.unmount()
 		}
 		const onPointerEnter = () => {
 			onTrackStart()
@@ -135,7 +145,7 @@ export default class Tooltip {
 		}
 	}
 
-	addTooltip = () => {
+	render() {
 		const { y, container } = this.props
 		// Create tooltip.
 		this.tooltip = document.createElement('div')
@@ -164,74 +174,74 @@ export default class Tooltip {
 		}
 	}
 
-	addTooltipLine = () => {
+	renderLine() {
 		const { canvas } = this.props
 		const xmlns = 'http://www.w3.org/2000/svg'
-		this.tooltipLine = document.createElementNS(xmlns, 'line')
-		this.tooltipLine.setAttributeNS(null, 'class', 'chartogram__tooltip-line')
-		canvas.insertBefore(this.tooltipLine, canvas.querySelector('polyline'))
+		this.line = document.createElementNS(xmlns, 'line')
+		this.line.setAttributeNS(null, 'class', 'chartogram__tooltip-line')
+		canvas.insertBefore(this.line, canvas.querySelector('polyline'))
 	}
 
-	removeTooltip = () => {
+	unmount() {
 		if (this.tooltip) {
 			const { container } = this.props
 			this.tooltipForX = undefined
 			container.removeChild(this.tooltip)
 			this.tooltip = undefined
-			this.removeTooltipPoints()
-			this.removeTooltipLine()
+			this.unmountPoints()
+			this.unmountLine()
 		}
 	}
 
-	removeTooltipLine = () => {
+	unmountLine = () => {
 		const { canvas } = this.props
-		canvas.removeChild(this.tooltipLine)
-		this.tooltipLine = undefined
+		canvas.removeChild(this.line)
+		this.line = undefined
 	}
 
-	addTooltipPoints = () => {
-		this.tooltipPoints = []
+	renderPoints() {
+		this.points = []
 		const { pointsContainer, y } = this.props
 		for (const _y of y) {
 			if (_y.isShown) {
 				const point = document.createElement('div')
 				point.classList.add('chartogram__tooltip-point')
 				point.style.color = _y.color
-				this.tooltipPoints.push(point)
+				this.points.push(point)
 				pointsContainer.appendChild(point)
 			}
 		}
 	}
 
-	removeTooltipPoints = () => {
+	unmountPoints = () => {
 		const { pointsContainer } = this.props
-		for (const point of this.tooltipPoints) {
+		for (const point of this.points) {
 			pointsContainer.removeChild(point)
 		}
-		this.tooltipPoints = undefined
+		this.points = undefined
 	}
 
-	updateTooltipLine = (x) => {
+	updateLine = (x) => {
 		const { canvasWidth, aspectRatio, fixSvgCoordinate, mapX } = this.props
-		if (!this.tooltipLine) {
-			this.addTooltipLine()
+		if (!this.line) {
+			this.renderLine()
 		}
-		this.tooltipLine.setAttributeNS(null, 'x1', fixSvgCoordinate(mapX(x)))
-		this.tooltipLine.setAttributeNS(null, 'x2', fixSvgCoordinate(mapX(x)))
-		this.tooltipLine.setAttributeNS(null, 'y1', 0)
-		this.tooltipLine.setAttributeNS(null, 'y2', fixSvgCoordinate(canvasWidth / aspectRatio))
+		this.line.setAttributeNS(null, 'x1', fixSvgCoordinate(mapX(x)))
+		this.line.setAttributeNS(null, 'x2', fixSvgCoordinate(mapX(x)))
+		this.line.setAttributeNS(null, 'y1', 0)
+		this.line.setAttributeNS(null, 'y2', fixSvgCoordinate(canvasWidth / aspectRatio))
 	}
 
-	updateTooltipPoints = (xIndex, xRatio) => {
+	updatePoints = (xIndex, xRatio) => {
 		const { maxY, y } = this.props
-		if (!this.tooltipPoints) {
-			this.addTooltipPoints()
+		if (!this.points) {
+			this.renderPoints()
 		}
 		let i = 0
 		let j = 0
 		while (i < y.length) {
 			if (y[i].isShown) {
-				const point = this.tooltipPoints[j]
+				const point = this.points[j]
 				const _y = y[i].points[xIndex]
 				const yRatio = _y / maxY
 				point.style.left = `${xRatio * 100}%`
