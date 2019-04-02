@@ -393,6 +393,9 @@ export default class Chartogram {
 			const deltaY = Math.max(deltaMinY, deltaMaxY)
 			transitionDuration = maxTransitionDuration * Math.max(0.2, Math.min(deltaY, 0.5) * 2)
 		}
+		if (!graphOpacity) {
+			transitionDuration /= 2
+		}
 		const state = {
 			transitionStartedAt: Date.now(),
 			transitionDuration
