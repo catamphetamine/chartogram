@@ -8,16 +8,18 @@ export default class Togglers {
 	}
 
 	componentDidMount(rootNode) {
+		this.togglers = rootNode.querySelector('.chartogram__chart-togglers')
+		this.mount()
+	}
+
+	mount() {
 		const { data } = this.props
-		// Add graph togglers.
-		const graphTogglers = rootNode.querySelector('.chartogram__chart-togglers')
-		clearElement(graphTogglers)
 		for (const y of data.y) {
-			graphTogglers.appendChild(this.createGraphToggler(y))
+			this.togglers.appendChild(this.renderToggler(y))
 		}
 	}
 
-	createGraphToggler = ({ id, name, color }) => {
+	renderToggler = ({ id, name, color }) => {
 		const toggler = document.createElement('button')
 		toggler.setAttribute('type', 'button')
 		toggler.classList.add('chartogram__chart-toggler')
