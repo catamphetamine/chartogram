@@ -1,4 +1,5 @@
 import {
+	clearElement,
 	getLowerSiblingDivisibleBy,
 	divideInterval,
 	throttle
@@ -21,13 +22,15 @@ export default class Charts {
 		this.tooltipContainer = rootNode.querySelector('.chartogram__plan')
 
 		this.state = {
-			aspectRatio: this.getCanvasAspectRatio()
+			aspectRatio: this.getCanvasAspectRatio(),
+			canvasWidthPx: this.canvas.getBoundingClientRect().width
 		}
 
 		this.updateAspectRatio()
 
 		this.mountGridLines()
-		this.mountGauges()
+		this.mountXAxis()
+		this.mountYAxis()
 		this.mountGraphs()
 
 		this.tooltip = new Tooltip(this.getTooltipProps())
@@ -44,20 +47,10 @@ export default class Charts {
 		window.removeEventListener('resize', this.onResizeThrottled)
 	}
 
-	componentDidUpdate(previousProps, previousState) {
-		if (previousState) {
-			if (this.state.aspectRatio !== previousState.aspectRatio) {
-				this.updateAspectRatio(this.state.aspectRatio)
-			}
-		}
-		this.render()
-		this.tooltip.props = this.getTooltipProps()
-		this.tooltip.componentDidUpdate()
-	}
-
 	onResize = (event) => {
 		this.setState({
-			aspectRatio: this.getCanvasAspectRatio()
+			aspectRatio: this.getCanvasAspectRatio(),
+			canvasWidthPx: this.canvas.getBoundingClientRect().width
 		})
 	}
 
@@ -72,9 +65,20 @@ export default class Charts {
 		this.componentDidUpdate(this.props, previousState)
 	}
 
-	getCanvasAspectRatio() {
-		const canvasDimensions = this.canvas.getBoundingClientRect()
-		return canvasDimensions.width / canvasDimensions.height
+	componentDidUpdate(previousProps, previousState) {
+		if (previousState) {
+			if (this.state.aspectRatio !== previousState.aspectRatio) {
+				this.updateAspectRatio(this.state.aspectRatio)
+			}
+			// If canvas width has changed then remount X axis.
+			if (this.state.canvasWidthPx !== previousState.canvasWidthPx) {
+				clearElement(this.xAxis)
+				this.mountXAxis()
+			}
+		}
+		this.render()
+		this.tooltip.props = this.getTooltipProps()
+		this.tooltip.componentDidUpdate()
 	}
 
 	getTooltipProps() {
@@ -119,12 +123,12 @@ export default class Charts {
 	}
 
 	render() {
-		const { gaugeTickMarksCount, y, minX, maxX, minY, maxY, graphOpacity } = this.props
+		const { yAxisTickMarksCount, y, minX, maxX, minY, maxY, graphOpacity } = this.props
 		// Calculate grid lines' coordinates.
 		const minY_ = minY
 		const maxY_ = getLowerSiblingDivisibleBy(maxY, 10)
 		const yAxisScale = (maxY - minY) / (maxY_ - minY_)
-		const yAxisTickMarks = divideInterval(minY_, maxY_, gaugeTickMarksCount)
+		const yAxisTickMarks = divideInterval(minY_, maxY_, yAxisTickMarksCount)
 		// Update grid lines.
 		yAxisTickMarks.forEach((y, i) => this.updateGridLine(i, y))
 		// Update graphs.
@@ -145,7 +149,7 @@ export default class Charts {
 			i++
 		}
 		// Update gauges.
-		this.updateGauges(
+		this.updateAxes(
 			minX,
 			maxX,
 			minY_,
@@ -174,10 +178,10 @@ export default class Charts {
 	}
 
 	mountGridLines() {
-		const { gaugeTickMarksCount } = this.props
+		const { yAxisTickMarksCount } = this.props
 		this.gridLines = []
 		let i = 0
-		while (i < gaugeTickMarksCount) {
+		while (i < yAxisTickMarksCount) {
 			const line = this.renderGridLine(0)
 			this.gridLines.push(line)
 			this.canvas.appendChild(line)
@@ -185,11 +189,31 @@ export default class Charts {
 		}
 	}
 
-	mountGauges() {
-		const { gaugeTickMarksCount } = this.props
+	mountXAxis() {
+		const xGaugeTickMarksCount = this.getXGaugeTickMarksCount()
 		let i = 0
-		while (i < gaugeTickMarksCount) {
+		while (i < xGaugeTickMarksCount) {
 			this.xAxis.appendChild(document.createElement('div'))
+			i++
+		}
+	}
+
+	getXGaugeTickMarksCount() {
+		const { xAxisTickMarkWidth } = this.props
+		const { canvasWidthPx } = this.state
+		let count = canvasWidthPx / xAxisTickMarkWidth
+		if (count > 2) {
+			count = Math.pow(count - 2, 0.75)
+		} else {
+			count = 0
+		}
+		return 2 + Math.floor(count)
+	}
+
+	mountYAxis() {
+		const { yAxisTickMarksCount } = this.props
+		let i = 0
+		while (i < yAxisTickMarksCount) {
 			this.yAxis.appendChild(document.createElement('div'))
 			i++
 		}
@@ -235,17 +259,14 @@ export default class Charts {
 		line.setAttribute('y2', fixSvgCoordinate(this.mapY(maxY - y)))
 	}
 
-	updateGauges(minX, maxX, minY, maxY, yAxisScale) {
-		const { months, gaugeTickMarksCount } = this.props
-		this.updateGauge(this.xAxis, minX, maxX, gaugeTickMarksCount, (timestamp) => {
-			const date = new Date(timestamp)
-			return `${months[date.getMonth()]} ${date.getDate()}`
-		})
-		this.updateGauge(this.yAxis, minY, maxY, gaugeTickMarksCount)
+	updateAxes(minX, maxX, minY, maxY, yAxisScale) {
+		this.updateAxis(this.xAxis, minX, maxX, this.formatDate)
+		this.updateAxis(this.yAxis, minY, maxY)
 		this.yAxis.style.height = `${100 / yAxisScale}%`
 	}
 
-	updateGauge(gauge, min, max, tickMarksCount, transform) {
+	updateAxis(gauge, min, max, transform) {
+		const tickMarksCount = gauge.childNodes.length
 		let i = 0
 		while (i < tickMarksCount) {
 			const tickMark = gauge.childNodes[i]
@@ -256,6 +277,12 @@ export default class Charts {
 			tickMark.textContent = value
 			i++
 		}
+	}
+
+	formatDate = (timestamp) => {
+		const { months } = this.props
+		const date = new Date(timestamp)
+		return `${months[date.getMonth()]} ${date.getDate()}`
 	}
 }
 
