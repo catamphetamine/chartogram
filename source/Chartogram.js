@@ -34,6 +34,8 @@ export default class Chartogram {
 				max: Math.max(...y.points)
 			}))
 		}
+
+		this.transitions = []
 	}
 
 	componentDidMount() {
@@ -66,8 +68,8 @@ export default class Chartogram {
 		this.timeline.componentWillUnmount()
 		this.rootNode.classList.remove('chartogram')
 		clearElement(this.rootNode)
-		if (this.transition) {
-			cancelAnimationFrame(this.transition)
+		if (this.transitionTimer) {
+			cancelAnimationFrame(this.transitionTimer)
 		}
 	}
 
@@ -263,13 +265,20 @@ export default class Chartogram {
 			minYGlobal,
 			maxYGlobal
 		} = this.calculateMinMaxY(this.state.y)
-		this.transitionState(
-			minY,
-			maxY,
-			minYGlobal,
-			maxYGlobal,
-			this.state.y.map(y => y.isShown ? 1 : 0)
+		this.batchTransitions()
+		this.transition(this.charts, 'minY', minY)
+		this.transition(this.charts, 'maxY', maxY)
+		this.transition(this.timeline, 'minYGlobal', minYGlobal)
+		this.transition(this.timeline, 'maxYGlobal', maxYGlobal)
+		this.transition(
+			this.charts,
+			'graphOpacity',
+			this.state.y.map(y => y.isShown ? 1 : 0),
+			(graphOpacityFrom, graphOpacityTo, ratio) => {
+				return graphOpacityTo.map((_, i) => graphOpacityFrom[i] + (graphOpacityTo[i] - graphOpacityFrom[i]) * ratio)
+			}
 		)
+		this.runTransitions()
 		return true
 	}
 
@@ -280,7 +289,10 @@ export default class Chartogram {
 		delete state.minY
 		delete state.maxY
 		this.setState(state)
-		this.transitionState(minY, maxY)
+		this.batchTransitions()
+		this.transition(this.charts, 'minY', minY)
+		this.transition(this.charts, 'maxY', maxY)
+		this.runTransitions()
 	}
 
 	createPolylinePoints = (x, y) => {
@@ -294,100 +306,100 @@ export default class Chartogram {
 		return Math.round(x * precisionFactor) / precisionFactor
 	}
 
-	transitionState(minY, maxY, minYGlobal, maxYGlobal, graphOpacity) {
-		const { transitionDuration: maxTransitionDuration } = this.props
-		if (this.transition) {
-			cancelAnimationFrame(this.transition)
-			this.transitionStateTick()
-			cancelAnimationFrame(this.transition)
+	batchTransitions() {
+		this.pendingTransitions = []
+	}
+
+	runTransitions() {
+		// Find ongoing transitions for these owners and properties.
+		const ongoingTransitions = this.transitions.filter((transition) => {
+			for (const pendingTransition of this.pendingTransitions) {
+				if (transition.owner === pendingTransition.owner &&
+					transition.property === pendingTransition.property) {
+					return true
+				}
+			}
+		})
+		// Stop those ongoing transitions.
+		if (ongoingTransitions.length > 0) {
+			const state = {}
+			for (const transition of ongoingTransitions) {
+				// Stop the transition at current time.
+				transition.tick(state)
+			}
+			this.setState(state)
+			// Remove the transitions from the list.
+			this.transitions = this.transitions.filter(_ => ongoingTransitions.indexOf(_) < 0)
 		}
+		// Add all pending transitions.
+		const { transitionDuration: maxTransitionDuration, transitionEasing } = this.props
 		let transitionDuration = maxTransitionDuration
-		if (minY !== undefined) {
-			const heightBefore = this.state.maxY - this.state.minY
-			const deltaMaxY = Math.abs(maxY - this.state.maxY) / heightBefore
-			const deltaMinY = Math.abs(minY - this.state.minY) / heightBefore
+		// Adjust transition duration based on `minY` and `maxY`.
+		const minYTransition = this.pendingTransitions.find(_ => _.owner === this.charts && _.property === 'minY')
+		const maxYTransition = this.pendingTransitions.find(_ => _.owner === this.charts && _.property === 'maxY')
+		if (minYTransition && maxYTransition) {
+			const minYFrom = this.state.minY
+			const maxYFrom = this.state.maxY
+			const minYTo = minYTransition.toValue
+			const maxYTo = maxYTransition.toValue
+			const currentHeight = maxYFrom - minYFrom
+			const deltaMaxY = Math.abs(maxYTo - maxYFrom) / currentHeight
+			const deltaMinY = Math.abs(minYTo - minYFrom) / currentHeight
 			const deltaY = Math.max(deltaMinY, deltaMaxY)
 			transitionDuration = maxTransitionDuration * Math.max(0.2, Math.min(deltaY, 0.5) * 2)
 		}
-		const state = {
-			transitionStartedAt: Date.now(),
-			transitionDuration
+		// Set up transitions.
+		const state = this.state
+		this.transitions = this.transitions.concat(this.pendingTransitions.map((transition) => ({
+			...transition,
+			startedAt: Date.now(),
+			duration: transitionDuration,
+			easing: transitionEasing,
+			fromValue: state[transition.property],
+			tick(state) {
+				const elapsed = Date.now() - this.startedAt
+				let ratio = Math.min(elapsed / this.duration, 1)
+				ratio = EASING[this.easing](ratio)
+				if (this.getNewValue) {
+					state[this.property] = this.getNewValue(this.fromValue, this.toValue, ratio)
+				} else {
+					state[this.property] = this.fromValue + (this.toValue - this.fromValue) * ratio
+				}
+				return ratio === 1
+			}
+		})))
+		// Start transitions (if required).
+		if (!this.transitionTimer) {
+			this.transitionTimer = requestAnimationFrame(this.transitionTick)
 		}
-		if (minY !== undefined) {
-			state.minYFrom = this.state.minY
-			state.maxYFrom = this.state.maxY
-			state.minYTo = minY
-			state.maxYTo = maxY
-		}
-		if (graphOpacity !== undefined) {
-			state.graphOpacityFrom = this.state.graphOpacity
-			state.graphOpacityTo = graphOpacity
-		}
-		if (minYGlobal !== undefined) {
-			state.minYGlobalFrom = this.state.minYGlobal
-			state.maxYGlobalFrom = this.state.maxYGlobal
-			state.minYGlobalTo = minYGlobal
-			state.maxYGlobalTo = maxYGlobal
-		}
-		this.setState(state)
-		// Place the following in a `setState()` callback in case of React.
-		this.transition = requestAnimationFrame(this.transitionStateTick)
 	}
 
-	transitionStateTick = () => {
-		const {
-			transitionEasing
-		} = this.props
-		const {
-			transitionStartedAt,
-			transitionDuration,
-			graphOpacityFrom,
-			graphOpacityTo,
-			minYFrom,
-			minYTo,
-			maxYFrom,
-			maxYTo,
-			minYGlobalFrom,
-			minYGlobalTo,
-			maxYGlobalFrom,
-			maxYGlobalTo
-		} = this.state
-		const elapsed = Date.now() - transitionStartedAt
-		let ratio = Math.min(elapsed / transitionDuration, 1)
-		ratio = EASING[transitionEasing](ratio)
+	transition(owner, property, toValue, getNewValue) {
+		this.pendingTransitions.push({
+			owner,
+			property,
+			toValue,
+			getNewValue
+		})
+	}
+
+	transitionTick = () => {
+		let finishedTransitions
 		const state = {}
-		if (minYTo !== undefined) {
-			state.minY = minYFrom + (minYTo - minYFrom) * ratio
-			state.maxY = maxYFrom + (maxYTo - maxYFrom) * ratio
-			if (ratio === 1) {
-				state.minYFrom = undefined
-				state.minYTo = undefined
-				state.maxYFrom = undefined
-				state.maxYTo = undefined
-			}
-		}
-		if (minYGlobalTo !== undefined) {
-			state.minYGlobal = minYGlobalFrom + (minYGlobalTo - minYGlobalFrom) * ratio
-			state.maxYGlobal = maxYGlobalFrom + (maxYGlobalTo - maxYGlobalFrom) * ratio
-			if (ratio === 1) {
-				state.minYGlobalFrom = undefined
-				state.minYGlobalTo = undefined
-				state.maxYGlobalFrom = undefined
-				state.maxYGlobalTo = undefined
-			}
-		}
-		if (graphOpacityTo !== undefined) {
-			state.graphOpacity = graphOpacityTo.map((_, i) => graphOpacityFrom[i] + (graphOpacityTo[i] - graphOpacityFrom[i]) * ratio)
-			if (ratio === 1) {
-				state.graphOpacityFrom = undefined
-				state.graphOpacityTo = undefined
+		for (const transition of this.transitions) {
+			if (transition.tick(state)) {
+				finishedTransitions = finishedTransitions || []
+				finishedTransitions.push(transition)
 			}
 		}
 		this.setState(state)
-		if (ratio < 1) {
-			this.transition = requestAnimationFrame(this.transitionStateTick)
+		if (finishedTransitions) {
+			this.transitions = this.transitions.filter(_ => finishedTransitions.indexOf(_) < 0)
+		}
+		if (this.transitions.length > 0) {
+			this.transitionTimer = requestAnimationFrame(this.transitionTick)
 		} else {
-			this.transition = undefined
+			this.transitionTimer = undefined
 		}
 	}
 }
