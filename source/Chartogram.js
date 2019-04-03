@@ -6,6 +6,7 @@ import {
 import Charts from './Charts'
 import Timeline from './Timeline'
 import Togglers from './Togglers'
+import Transition from './Transition'
 
 export default class Chartogram {
 	constructor(rootNode, data, title = 'Title', props = {}) {
@@ -35,7 +36,11 @@ export default class Chartogram {
 			}))
 		}
 
-		this.transitions = []
+		this.transition = new Transition(
+			() => this.state,
+			this.setState,
+			this.props
+		)
 	}
 
 	componentDidMount() {
@@ -66,14 +71,12 @@ export default class Chartogram {
 	componentWillUnmount() {
 		this.charts.componentWillUnmount()
 		this.timeline.componentWillUnmount()
+		this.transition.cleanUp()
 		this.rootNode.classList.remove('chartogram')
 		clearElement(this.rootNode)
-		if (this.transitionTimer) {
-			cancelAnimationFrame(this.transitionTimer)
-		}
 	}
 
-	setState(newState) {
+	setState = (newState) => {
 		const previousState = this.state
 		this.state = {
 			...this.state,
@@ -249,7 +252,8 @@ export default class Chartogram {
 	}
 
 	onToggle = (id) => {
-		const y = this.state.y.find(_ => _.id === id)
+		const i = this.state.y.findIndex(_ => _.id === id)
+		const y = this.state.y[i]
 		// Won't allow hiding all graphs.
 		if (y.isShown) {
 			const graphsShown = this.state.y.filter(_ => _.isShown)
@@ -257,7 +261,7 @@ export default class Chartogram {
 				return
 			}
 		}
-		// Mutating `this.state` without `setState()`.
+		// Mutating `this.state` without `setState()` for simplicity.
 		y.isShown = !y.isShown
 		const {
 			minY,
@@ -265,20 +269,22 @@ export default class Chartogram {
 			minYGlobal,
 			maxYGlobal
 		} = this.calculateMinMaxY(this.state.y)
-		this.batchTransitions()
-		this.transition(this.charts, 'minY', minY)
-		this.transition(this.charts, 'maxY', maxY)
-		this.transition(this.timeline, 'minYGlobal', minYGlobal)
-		this.transition(this.timeline, 'maxYGlobal', maxYGlobal)
-		this.transition(
-			this.charts,
-			'graphOpacity',
-			this.state.y.map(y => y.isShown ? 1 : 0),
-			(graphOpacityFrom, graphOpacityTo, ratio) => {
-				return graphOpacityTo.map((_, i) => graphOpacityFrom[i] + (graphOpacityTo[i] - graphOpacityFrom[i]) * ratio)
-			}
+		this.transition.batch()
+		this.transition.add('charts', 'minY', minY)
+		this.transition.add('charts', 'maxY', maxY)
+		this.transition.add('timeline', 'minYGlobal', minYGlobal)
+		this.transition.add('timeline', 'maxYGlobal', maxYGlobal)
+		this.transition.add(
+			`graph#${id}/opacity`,
+			(state) => state.graphOpacity[i],
+			(state, value) => {
+				// Change `graphOpacity` for "shallow equal" comparison.
+				state.graphOpacity = state.graphOpacity.slice()
+				state.graphOpacity[i] = value
+			},
+			y.isShown ? 1 : 0
 		)
-		this.runTransitions()
+		this.transition.run()
 		return true
 	}
 
@@ -289,10 +295,10 @@ export default class Chartogram {
 		delete state.minY
 		delete state.maxY
 		this.setState(state)
-		this.batchTransitions()
-		this.transition(this.charts, 'minY', minY)
-		this.transition(this.charts, 'maxY', maxY)
-		this.runTransitions()
+		this.transition.batch()
+		this.transition.add('charts', 'minY', minY)
+		this.transition.add('charts', 'maxY', maxY)
+		this.transition.run()
 	}
 
 	createPolylinePoints = (x, y) => {
@@ -304,103 +310,6 @@ export default class Chartogram {
 	fixSvgCoordinate = (x) => {
 		const { precisionFactor } = this.props
 		return Math.round(x * precisionFactor) / precisionFactor
-	}
-
-	batchTransitions() {
-		this.pendingTransitions = []
-	}
-
-	runTransitions() {
-		// Find ongoing transitions for these owners and properties.
-		const ongoingTransitions = this.transitions.filter((transition) => {
-			for (const pendingTransition of this.pendingTransitions) {
-				if (transition.owner === pendingTransition.owner &&
-					transition.property === pendingTransition.property) {
-					return true
-				}
-			}
-		})
-		// Stop those ongoing transitions.
-		if (ongoingTransitions.length > 0) {
-			const state = {}
-			for (const transition of ongoingTransitions) {
-				// Stop the transition at current time.
-				transition.tick(state)
-			}
-			this.setState(state)
-			// Remove the transitions from the list.
-			this.transitions = this.transitions.filter(_ => ongoingTransitions.indexOf(_) < 0)
-		}
-		// Add all pending transitions.
-		const { transitionDuration: maxTransitionDuration, transitionEasing } = this.props
-		let transitionDuration = maxTransitionDuration
-		// Adjust transition duration based on `minY` and `maxY`.
-		const minYTransition = this.pendingTransitions.find(_ => _.owner === this.charts && _.property === 'minY')
-		const maxYTransition = this.pendingTransitions.find(_ => _.owner === this.charts && _.property === 'maxY')
-		if (minYTransition && maxYTransition) {
-			const minYFrom = this.state.minY
-			const maxYFrom = this.state.maxY
-			const minYTo = minYTransition.toValue
-			const maxYTo = maxYTransition.toValue
-			const currentHeight = maxYFrom - minYFrom
-			const deltaMaxY = Math.abs(maxYTo - maxYFrom) / currentHeight
-			const deltaMinY = Math.abs(minYTo - minYFrom) / currentHeight
-			const deltaY = Math.max(deltaMinY, deltaMaxY)
-			transitionDuration = maxTransitionDuration * Math.max(0.2, Math.min(deltaY, 0.5) * 2)
-		}
-		// Set up transitions.
-		const state = this.state
-		this.transitions = this.transitions.concat(this.pendingTransitions.map((transition) => ({
-			...transition,
-			startedAt: Date.now(),
-			duration: transitionDuration,
-			easing: transitionEasing,
-			fromValue: state[transition.property],
-			tick(state) {
-				const elapsed = Date.now() - this.startedAt
-				let ratio = Math.min(elapsed / this.duration, 1)
-				ratio = EASING[this.easing](ratio)
-				if (this.getNewValue) {
-					state[this.property] = this.getNewValue(this.fromValue, this.toValue, ratio)
-				} else {
-					state[this.property] = this.fromValue + (this.toValue - this.fromValue) * ratio
-				}
-				return ratio === 1
-			}
-		})))
-		// Start transitions (if required).
-		if (!this.transitionTimer) {
-			this.transitionTimer = requestAnimationFrame(this.transitionTick)
-		}
-	}
-
-	transition(owner, property, toValue, getNewValue) {
-		this.pendingTransitions.push({
-			owner,
-			property,
-			toValue,
-			getNewValue
-		})
-	}
-
-	transitionTick = () => {
-		let finishedTransitions
-		const state = {}
-		for (const transition of this.transitions) {
-			if (transition.tick(state)) {
-				finishedTransitions = finishedTransitions || []
-				finishedTransitions.push(transition)
-			}
-		}
-		this.setState(state)
-		if (finishedTransitions) {
-			this.transitions = this.transitions.filter(_ => finishedTransitions.indexOf(_) < 0)
-		}
-		if (this.transitions.length > 0) {
-			this.transitionTimer = requestAnimationFrame(this.transitionTick)
-		} else {
-			this.transitionTimer = undefined
-		}
 	}
 }
 
@@ -428,25 +337,3 @@ const WEEKDAYS = [
 	'Fri',
 	'Sat'
 ]
-
-// https://gist.github.com/gre/1650294
-const EASING = {
-	linear(t) {
-		return t
-	},
-	easeInOutSin(t) {
-		return (1 + Math.sin(Math.PI * t - Math.PI / 2)) / 2
-	},
-	easeInOutQuad(t) {
-		return t<.5 ? 2*t*t : -1+(4-2*t)*t
-	},
-  easeInOutCubic(t) {
-  	return t<.5 ? 4*t*t*t : (t-1)*(2*t-2)*(2*t-2)+1
-  },
-  easeOutCubic(t) {
-  	return (--t)*t*t+1
-  },
-  easeOutQuad(t) {
-  	return t*(2-t)
-  }
-}
