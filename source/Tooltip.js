@@ -132,20 +132,22 @@ export default class Tooltip {
 		tooltipDate.classList.add('chartogram__tooltip-header')
 		tooltip.appendChild(tooltipDate)
 		// Add graph values.
-		const tooltipValues = document.createElement('dl')
+		const tooltipValues = document.createElement('ul')
 		tooltipValues.classList.add('chartogram__tooltip-values')
 		tooltip.appendChild(tooltipValues)
 		// Add graph values.
 		for (const { isShown, color } of y) {
 			if (isShown) {
+				// Add graph value item.
+				const tooltipValueItem = document.createElement('li')
+				tooltipValueItem.style.color = color
+				tooltipValues.appendChild(tooltipValueItem)
 				// Add graph value.
-				const tooltipValue = document.createElement('dt')
-				tooltipValue.style.color = color
-				tooltipValues.appendChild(tooltipValue)
+				const tooltipValue = document.createElement('div')
+				tooltipValueItem.appendChild(tooltipValue)
 				// Add graph name.
-				const tooltipName = document.createElement('dd')
-				tooltipName.style.color = color
-				tooltipValues.appendChild(tooltipName)
+				const tooltipName = document.createElement('div')
+				tooltipValueItem.appendChild(tooltipName)
 			}
 		}
 		return tooltip
@@ -192,11 +194,14 @@ export default class Tooltip {
 		let left = xRatio * canvasWidth
 		left -= tooltipShift === undefined ? 40 : tooltipShift
 		const tooltipWidth = this.tooltip.getBoundingClientRect().width
-		const overflow = maxOverflow === undefined ? 5 : maxOverflow
-		if (left < -1 * overflow) {
-			left = -1 * overflow
-		} else if (left + tooltipWidth > canvasWidth + overflow) {
-			left = (canvasWidth + overflow) - tooltipWidth
+		const tooltipValues = this.tooltip.childNodes[1]
+		const isOverflown = tooltipValues.firstChild.getBoundingClientRect().top !== tooltipValues.lastChild.getBoundingClientRect().top
+		let allowedOverflow = maxOverflow === undefined ? 5 : maxOverflow
+		allowedOverflow = isOverflown ? 0 : allowedOverflow
+		if (left < -1 * allowedOverflow) {
+			left = -1 * allowedOverflow
+		} else if (left + tooltipWidth > canvasWidth + allowedOverflow) {
+			left = (canvasWidth + allowedOverflow) - tooltipWidth
 		}
 		this.tooltip.style.left = left + 'px'
 	}
@@ -213,8 +218,8 @@ export default class Tooltip {
 		let i = 0
 		for (const { isShown, points, name } of y) {
 			if (isShown) {
-				tooltipValues.childNodes[2 * i].textContent = points[xIndex]
-				tooltipValues.childNodes[2 * i + 1].textContent = name
+				tooltipValues.childNodes[i].childNodes[0].textContent = points[xIndex]
+				tooltipValues.childNodes[i].childNodes[1].textContent = name
 				i++
 			}
 		}
