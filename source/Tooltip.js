@@ -191,19 +191,27 @@ export default class Tooltip {
 
 	updateTooltipPosition(xRatio, canvasWidth) {
 		const { tooltipShift, maxOverflow } = this.props
-		let left = xRatio * canvasWidth
+		let left = Math.round(xRatio * canvasWidth)
 		left -= tooltipShift === undefined ? 40 : tooltipShift
-		const tooltipWidth = this.tooltip.getBoundingClientRect().width
-		const tooltipValues = this.tooltip.childNodes[1]
-		const isOverflown = tooltipValues.firstChild.getBoundingClientRect().top !== tooltipValues.lastChild.getBoundingClientRect().top
-		let allowedOverflow = maxOverflow === undefined ? 5 : maxOverflow
-		allowedOverflow = isOverflown ? 0 : allowedOverflow
-		if (left < -1 * allowedOverflow) {
-			left = -1 * allowedOverflow
-		} else if (left + tooltipWidth > canvasWidth + allowedOverflow) {
-			left = (canvasWidth + allowedOverflow) - tooltipWidth
+		// Don't overflow the tooltip while measuring its `offsetWidth`
+		// because tooltip values will wrap in case of overflow relative to the canvas width.
+		this.tooltip.style.left = 0
+		// Reset side margin.
+		this.tooltip.style.marginRight = 0
+		// Measure tooltip width with the updated content.
+		const tooltipWidth = this.tooltip.offsetWidth
+		const maxSideOverflow = maxOverflow === undefined ? 5 : maxOverflow
+		let overflow = 0
+		if (left < 0) {
+			overflow = -1 * Math.min(-1 * left, maxSideOverflow)
+			left = 0
+		} else if (left > canvasWidth - tooltipWidth) {
+			overflow = Math.min(left - (canvasWidth - tooltipWidth), maxSideOverflow)
+			left = canvasWidth - tooltipWidth
 		}
-		this.tooltip.style.left = left + 'px'
+		// The values list will wrap in case of overflow relative to the canvas width.
+		this.tooltip.style.left = (left + overflow) + 'px'
+		this.tooltip.style.marginRight = -overflow + 'px'
 	}
 
 	updateTooltipXValue(x) {
