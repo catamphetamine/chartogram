@@ -8,17 +8,52 @@ export function commaJoin(a, b) {
 	return a.map((ai, i) => `${ai},${b[i]}`)
 }
 
-export function getLowerSiblingDivisibleBy(n, divider) {
-	n = Math.floor(n)
-	while (true) {
-		if (n < divider) {
-			return divider
-		}
-		if (n % divider === 0) {
-			return n
-		}
-		n--
+export function roundNumber(n, count, precision) {
+	const precisionFactor = precision && Math.pow(10, precision)
+	if (precisionFactor) {
+		n *= precisionFactor
 	}
+	let delta = Math.floor(n / count)
+	delta = round(delta)
+	if (precisionFactor) {
+		delta /= precisionFactor
+	}
+	return delta * count
+}
+
+const ROUND_POINTS = [
+	{
+		threshold: 5,
+		adjustment: 2
+	},
+	{
+		threshold: 40,
+		adjustment: 10
+	}
+]
+
+function round(n) {
+	const digitCount = getDigitCount(n)
+	let factor = 1
+	if (digitCount > 2) {
+		factor = Math.pow(10, digitCount - 2)
+		n = Math.floor(n / Math.pow(10, digitCount - 2))
+	}
+	let roundPoint
+	for (const point of ROUND_POINTS) {
+		if (n > point.threshold) {
+			roundPoint = point
+		} else {
+			break
+		}
+	}
+	if (roundPoint) {
+		const remainder = n % roundPoint.adjustment
+		if (remainder) {
+			n -= remainder
+		}
+	}
+	return n * factor
 }
 
 export function divideInterval(min, max, GAUGE_TICK_MARKS_COUNT) {
@@ -203,4 +238,10 @@ export function setUpTouchMove(element, _onTrackStart, _onTrack, _onTrackStop) {
 		element.removeEventListener(onPointerEnter)
 		element.removeEventListener(onTouchStart)
 	}
+}
+
+// https://stackoverflow.com/questions/14879691/get-number-of-digits-with-javascript/28203456#28203456
+function getDigitCount(x) {
+  return (Math.log10((x ^ (x >> 31)) - (x >> 31)) | 0) + 1
+	// return Math.max(Math.floor(Math.log10(Math.abs(x))), 0) + 1
 }

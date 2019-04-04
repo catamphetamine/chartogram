@@ -1,7 +1,7 @@
 import {
 	clearElement,
 	commaJoin,
-	getLowerSiblingDivisibleBy
+	roundNumber
 } from './utility'
 
 import Charts from './Charts'
@@ -17,6 +17,7 @@ export default class Chartogram {
 			transitionEasing: 'easeOutQuad',
 			xAxisTickMarkWidth: 60,
 			yAxisTickMarksCount: 6,
+			yAxisPrecision: 0,
 			timelineWindowSize: 40,
 			canvasWidth: 512,
 			precisionFactor: Math.pow(10, props.precision || 3),
@@ -224,6 +225,7 @@ export default class Chartogram {
 	}
 
 	calculateMinMaxY(y) {
+		const { yAxisTickMarksCount, yAxisPrecision } = this.props
 		// Calculate visible min/max Y for the graphs being shown.
 		let minY = Infinity
 		let maxY = -Infinity
@@ -250,7 +252,7 @@ export default class Chartogram {
 			maxY,
 			minYGlobal,
 			maxYGlobal,
-			maxYGaugeMark: getLowerSiblingDivisibleBy(maxY, 10)
+			maxYGaugeMark: roundNumber(maxY * 0.985, yAxisTickMarksCount - 1, yAxisPrecision)
 		}
 	}
 
@@ -344,22 +346,35 @@ export default class Chartogram {
 		}
 		const date = new Date(value)
 		if (options.long) {
-			const isSameYear = date.getFullYear() === new Date().getFullYear()
-			if (isSameYear) {
+			// const isSameYear = date.getFullYear() === new Date().getFullYear()
+			// if (isSameYear) {
 				return this.dateTimeFormatLong.format(date)
-			} else {
-				return this.dateTimeFormatLongWithYear.format(date)
-			}
+			// } else {
+			// 	return this.dateTimeFormatLongWithYear.format(date)
+			// }
 		} else {
 			return this.dateTimeFormatShort.format(date)
 		}
 	}
 
 	formatY = (value, options = {}) => {
-		const { formatY } = this.props
+		const { locale, formatY, yAxisPrecision } = this.props
 		if (formatY) {
 			return formatY(value, options)
 		}
-		return Math.round(value)
+		if (!this.numberFormat) {
+			this.numberFormat = new Intl.NumberFormat(locale, {
+				minimumFractionDigits: yAxisPrecision
+			})
+		}
+		const precisionFactor = yAxisPrecision && Math.pow(10, yAxisPrecision)
+		if (precisionFactor) {
+			value /= precisionFactor
+		}
+		value = Math.round(value)
+		if (precisionFactor) {
+			value *= precisionFactor
+		}
+		return this.numberFormat.format(value)
 	}
 }

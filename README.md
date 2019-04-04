@@ -159,6 +159,7 @@ Add `chartogram--night-mode` CSS class to the chart `<section/>` to switch to Ni
 * `transitionDuration: number` — The maximum transition duration (in milliseconds).
 * `transitionEasing: string` — Is `easeOutQuad` by default.
 * `yAxisTickMarksCount: number` — Y axis tick marks count.
+* `yAxisPrecision: number` — Y axis tick mark labels rounding precision (if using fractional Y points). Is `0` by default.
 * `xAxisTickMarkWidth: number` — (in pixels) Is used to calculate the count of X axis tick marks based on canvas width (in pixels).
 * `canvasWidth: number` — SVG `viewBox` width (not pixels).
 * `precision: number` — SVG coordinates rounding precision.
