@@ -1,6 +1,7 @@
 import {
 	clearElement,
-	commaJoin
+	commaJoin,
+	getLowerSiblingDivisibleBy
 } from './utility'
 
 import Charts from './Charts'
@@ -248,7 +249,8 @@ export default class Chartogram {
 			minY,
 			maxY,
 			minYGlobal,
-			maxYGlobal
+			maxYGlobal,
+			maxYGaugeMark: getLowerSiblingDivisibleBy(maxY, 10)
 		}
 	}
 
@@ -268,11 +270,13 @@ export default class Chartogram {
 			minY,
 			maxY,
 			minYGlobal,
-			maxYGlobal
+			maxYGlobal,
+			maxYGaugeMark
 		} = this.calculateMinMaxY(this.state.y)
 		this.transition.batch()
 		this.transition.add('charts', 'minY', minY)
 		this.transition.add('charts', 'maxY', maxY)
+		this.transition.add('charts', 'maxYGaugeMark', maxYGaugeMark)
 		this.transition.add('timeline', 'minYGlobal', minYGlobal)
 		this.transition.add('timeline', 'maxYGlobal', maxYGlobal)
 		this.transition.add(
@@ -293,12 +297,15 @@ export default class Chartogram {
 		const state = this.createState(from, to)
 		const minY = state.minY
 		const maxY = state.maxY
+		const maxYGaugeMark = state.maxYGaugeMark
 		delete state.minY
 		delete state.maxY
+		delete state.maxYGaugeMark
 		this.setState(state)
 		this.transition.batch()
 		this.transition.add('charts', 'minY', minY)
 		this.transition.add('charts', 'maxY', maxY)
+		this.transition.add('charts', 'maxYGaugeMark', maxYGaugeMark)
 		this.transition.run()
 	}
 
@@ -353,6 +360,6 @@ export default class Chartogram {
 		if (formatY) {
 			return formatY(value, options)
 		}
-		return value
+		return Math.round(value)
 	}
 }

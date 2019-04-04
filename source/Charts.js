@@ -1,6 +1,5 @@
 import {
 	clearElement,
-	getLowerSiblingDivisibleBy,
 	divideInterval,
 	throttle
 } from './utility'
@@ -123,10 +122,10 @@ export default class Charts {
 	}
 
 	render() {
-		const { yAxisTickMarksCount, y, minX, maxX, minY, maxY, graphOpacity } = this.props
+		const { yAxisTickMarksCount, y, minX, maxX, minY, maxY, maxYGaugeMark, graphOpacity } = this.props
 		// Calculate grid lines' coordinates.
 		const minY_ = minY
-		const maxY_ = getLowerSiblingDivisibleBy(maxY, 10)
+		const maxY_ = maxYGaugeMark
 		const yAxisScale = (maxY - minY) / (maxY_ - minY_)
 		const yAxisTickMarks = divideInterval(minY_, maxY_, yAxisTickMarksCount)
 		// Update grid lines.
