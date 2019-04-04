@@ -153,8 +153,8 @@ Add `chartogram--night-mode` CSS class to the chart `<section/>` to switch to Ni
 
 ## Options
 
-* `formatX(value: number, { long: boolean })` — Formats X axis labels. `long` option is for the tooltip.
-* `formatY(value: number)` — Formats Y axis labels (including tooltip).
+* `formatX(value: number, { long: boolean })` — Formats X axis labels. `long` option is for the tooltip. Uses `Intl.DateTimeFormat` by default.
+* `formatY(value: number)` — Formats Y axis labels (including tooltip). Is `Math.round()` by default.
 * `locale: string` — Is used to format dates (the default system locale is used if none supplied).
 * `transitionDuration: number` — The maximum transition duration (in milliseconds).
 * `transitionEasing: string` — Is `easeOutQuad` by default.
