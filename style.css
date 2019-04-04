@@ -171,8 +171,10 @@
 	padding-right: calc(var(--chartogram-font-size) / 6);
 	padding-top: calc(var(--chartogram-font-size) / 12);
 	padding-bottom: calc(var(--chartogram-font-size) / 12);
-	border-radius: calc(var(--chartogram-font-size) / 4);
+	border-top-right-radius: calc(var(--chartogram-font-size) / 3);
+	border-bottom-right-radius: calc(var(--chartogram-font-size) / 3);
 	background-color: var(--chartogram-background-color);
+	transition: background-color var(--chartogram-night-mode-transition-duration);
 }
 
 .chartogram__y-wrapper {
