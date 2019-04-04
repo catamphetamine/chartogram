@@ -213,7 +213,11 @@ export default class Charts {
 		const { yAxisTickMarksCount } = this.props
 		let i = 0
 		while (i < yAxisTickMarksCount) {
-			this.yAxis.appendChild(document.createElement('div'))
+			const tickMark = document.createElement('div')
+			this.yAxis.appendChild(tickMark)
+			const label = document.createElement('span')
+			label.classList.add('chartogram__y__label')
+			tickMark.appendChild(label)
 			i++
 		}
 	}
@@ -274,7 +278,13 @@ export default class Charts {
 			if (transform) {
 				value = transform(value)
 			}
-			tickMark.textContent = value
+			if (tickMark.firstChild) {
+				// Y axis.
+				tickMark.firstChild.textContent = value
+			} else {
+				// X axis.
+				tickMark.textContent = value
+			}
 			i++
 		}
 	}
