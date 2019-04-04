@@ -162,6 +162,19 @@
 	pointer-events: none;
 }
 
+.chartogram__y__label {
+	margin-left: calc(-1 * var(--chartogram-font-size) / 6);
+	margin-right: calc(-1 * var(--chartogram-font-size) / 6);
+	margin-top: calc(-1 * var(--chartogram-font-size) / 12);
+	margin-bottom: calc(-1 * var(--chartogram-font-size) / 12);
+	padding-left: calc(var(--chartogram-font-size) / 6);
+	padding-right: calc(var(--chartogram-font-size) / 6);
+	padding-top: calc(var(--chartogram-font-size) / 12);
+	padding-bottom: calc(var(--chartogram-font-size) / 12);
+	border-radius: calc(var(--chartogram-font-size) / 4);
+	background-color: var(--chartogram-background-color);
+}
+
 .chartogram__y-wrapper {
 	position: absolute;
 	left: 0;
