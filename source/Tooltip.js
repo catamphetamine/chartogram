@@ -197,9 +197,11 @@ export default class Tooltip {
 		// because tooltip values will wrap in case of overflow relative to the canvas width.
 		this.tooltip.style.left = 0
 		// Reset side margin.
-		this.tooltip.style.marginRight = 0
+		this.tooltip.parentNode.style.marginRight = 0
 		// Measure tooltip width with the updated content.
-		const tooltipWidth = this.tooltip.offsetWidth
+		const tooltipWidth = this.tooltip.getBoundingClientRect().width
+		// `.offsetWidth` returns a slightly incorrect (rounded) value.
+		// const tooltipWidth = this.tooltip.offsetWidth
 		const maxSideOverflow = maxOverflow === undefined ? 5 : maxOverflow
 		let overflow = 0
 		if (left < 0) {
