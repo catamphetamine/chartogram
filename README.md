@@ -22,11 +22,12 @@ Originally created as part of [Telegram Charts Contest](https://t.me/contest/6).
 
 ## Use
 
-The default exported function takes three arguments:
+The default exported function takes four arguments:
 
 * The DOM element where the chart will be rendered.
 * Chart data.
 * Chart title.
+* (optional) [`options`](#options).
 
 Chart data must have shape:
 
@@ -149,6 +150,19 @@ class Chartogram extends React.Component {
 ## Night mode
 
 Add `chartogram--night-mode` CSS class to the chart `<section/>` to switch to Night Mode.
+
+## Options
+
+* `formatX(value: number, { long: boolean })` — Formats X axis labels. `long` option is for the tooltip.
+* `formatY(value: number)` — Formats Y axis labels (including tooltip).
+* `locale: string` — Is used to format dates (the default system locale is used if none supplied).
+* `transitionDuration: number` — The maximum transition duration (in milliseconds).
+* `transitionEasing: string` — Is `easeOutQuad` by default.
+* `yAxisTickMarksCount: number` — Y axis tick marks count.
+* `xAxisTickMarkWidth: number` — (in pixels) Is used to calculate the count of X axis tick marks based on canvas width (in pixels).
+* `canvasWidth: number` — SVG `viewBox` width (not pixels).
+* `precision: number` — SVG coordinates rounding precision.
+* `timelineWindowSize: number` — The initial size of timeline window (in points).
 
 ## Custom colors
 
