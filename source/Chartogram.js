@@ -19,8 +19,6 @@ export default class Chartogram {
 			timelineWindowSize: 40,
 			canvasWidth: 512,
 			precisionFactor: Math.pow(10, props.precision || 3),
-			months: MONTHS,
-			weekdays: WEEKDAYS,
 			...props
 		}
 
@@ -106,7 +104,9 @@ export default class Chartogram {
 			...this.props,
 			...this.state,
 			createPolylinePoints: this.createPolylinePoints,
-			fixSvgCoordinate: this.fixSvgCoordinate
+			fixSvgCoordinate: this.fixSvgCoordinate,
+			formatX: this.formatX,
+			formatY: this.formatY
 		}
 	}
 
@@ -312,29 +312,47 @@ export default class Chartogram {
 		const { precisionFactor } = this.props
 		return Math.round(x * precisionFactor) / precisionFactor
 	}
+
+	formatX = (value, options = {}) => {
+		const { locale, formatX } = this.props
+		if (formatX) {
+			return formatX(value, options)
+		}
+		if (!this.dateTimeFormatShort) {
+			this.dateTimeFormatShort = new Intl.DateTimeFormat(locale, {
+				month: 'short',
+				day: 'numeric'
+			})
+			this.dateTimeFormatLong = new Intl.DateTimeFormat(locale, {
+				weekday: 'short',
+				month: 'short',
+				day: 'numeric'
+			})
+			this.dateTimeFormatLongWithYear = new Intl.DateTimeFormat(locale, {
+				weekday: 'short',
+				year: 'numeric',
+				month: 'short',
+				day: 'numeric'
+			})
+		}
+		const date = new Date(value)
+		if (options.long) {
+			const isSameYear = date.getFullYear() === new Date().getFullYear()
+			if (isSameYear) {
+				return this.dateTimeFormatLong.format(date)
+			} else {
+				return this.dateTimeFormatLongWithYear.format(date)
+			}
+		} else {
+			return this.dateTimeFormatShort.format(date)
+		}
+	}
+
+	formatY = (value, options = {}) => {
+		const { formatY } = this.props
+		if (formatY) {
+			return formatY(value, options)
+		}
+		return value
+	}
 }
-
-const MONTHS = [
-	'Jan',
-	'Feb',
-	'Mar',
-	'Apr',
-	'May',
-	'Jun',
-	'Jul',
-	'Aug',
-	'Sep',
-	'Oct',
-	'Nov',
-	'Dec'
-]
-
-const WEEKDAYS = [
-	'Sun',
-	'Mon',
-	'Tue',
-	'Wed',
-	'Thu',
-	'Fri',
-	'Sat'
-]

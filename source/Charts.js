@@ -86,8 +86,8 @@ export default class Charts {
 			canvas: this.canvas,
 			container: this.tooltipContainer,
 			pointsContainer: this.canvasWrapper,
-			weekdays: this.props.weekdays,
-			months: this.props.months,
+			formatX: this.props.formatX,
+			formatY: this.props.formatY,
 			canvasWidth: this.props.canvasWidth,
 			aspectRatio: this.state.aspectRatio,
 			mapX: this.mapX,
@@ -260,8 +260,9 @@ export default class Charts {
 	}
 
 	updateAxes(minX, maxX, minY, maxY, yAxisScale) {
-		this.updateAxis(this.xAxis, minX, maxX, this.formatDate)
-		this.updateAxis(this.yAxis, minY, maxY)
+		const { formatX, formatY } = this.props
+		this.updateAxis(this.xAxis, minX, maxX, formatX)
+		this.updateAxis(this.yAxis, minY, maxY, formatY)
 		this.yAxis.style.height = `${100 / yAxisScale}%`
 	}
 
@@ -277,12 +278,6 @@ export default class Charts {
 			tickMark.textContent = value
 			i++
 		}
-	}
-
-	formatDate = (timestamp) => {
-		const { months } = this.props
-		const date = new Date(timestamp)
-		return `${months[date.getMonth()]} ${date.getDate()}`
 	}
 }
 

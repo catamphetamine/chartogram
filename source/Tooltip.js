@@ -180,8 +180,8 @@ export default class Tooltip {
 	updateTooltip(x, xIndex, canvasWidth) {
 		const { minX, maxX } = this.props
 		const xRatio = (x - minX) / (maxX - minX)
-		this.updateTooltipDate(new Date(x))
-		this.updateTooltipValues(xIndex)
+		this.updateTooltipXValue(x)
+		this.updateTooltipYValues(xIndex)
 		this.updateTooltipPosition(xRatio, canvasWidth)
 		this.updatePointPositions(xIndex, xRatio)
 		this.updateLinePosition(x)
@@ -201,13 +201,13 @@ export default class Tooltip {
 		this.tooltip.style.left = left + 'px'
 	}
 
-	updateTooltipDate(date) {
-		const { weekdays, months } = this.props
+	updateTooltipXValue(x) {
+		const { formatX } = this.props
 		const tooltipDate = this.tooltip.childNodes[0]
-		tooltipDate.textContent = `${weekdays[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}`
+		tooltipDate.textContent = formatX(x, { long: true })
 	}
 
-	updateTooltipValues(xIndex) {
+	updateTooltipYValues(xIndex) {
 		const { y } = this.props
 		const tooltipValues = this.tooltip.childNodes[1]
 		let i = 0
