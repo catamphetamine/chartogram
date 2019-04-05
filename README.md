@@ -108,7 +108,20 @@ The default exported function returns another function which must be called in c
 
 where `[version]` is an npm package version range (for example, `0.1.x` or `^0.1.0`).
 
-### React
+### Bundler
+
+```
+npm install chartogram --save
+```
+
+```js
+import chartogram from 'chartogram'
+import 'chartogram/style.css'
+
+chartogram(element, data, title)
+```
+
+### React (bundler)
 
 ```
 npm install chartogram --save
@@ -130,6 +143,42 @@ export default class Page extends React.Component {
   }
 }
 ```
+
+### React (browser)
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://unpkg.com/chartogram@[version]/bundle/chartogram-react.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/chartogram@[version]/style.css"/>
+  </head>
+
+  <body>
+    <section id="page"></section>
+
+    <script>
+      class Page extends React.Component {
+        render() {
+          return (
+            <Chartogram
+              data={data}
+              title="Followers"
+              options={options}/>
+          )
+        }
+      }
+
+      ReactDOM.render(
+        <Page/>,
+        document.getElementById("page")
+      )
+    </script>
+  </body>
+</html>
+```
+
+where `[version]` is an npm package version range (for example, `0.1.x` or `^0.1.0`).
 
 ## Night mode
 
