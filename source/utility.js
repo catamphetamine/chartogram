@@ -21,17 +21,6 @@ export function roundNumber(n, count, precision) {
 	return delta * count
 }
 
-const ROUND_POINTS = [
-	{
-		threshold: 5,
-		adjustment: 2
-	},
-	{
-		threshold: 40,
-		adjustment: 10
-	}
-]
-
 function round(n) {
 	const digitCount = getDigitCount(n)
 	let factor = 1
@@ -39,18 +28,14 @@ function round(n) {
 		factor = Math.pow(10, digitCount - 2)
 		n = Math.floor(n / Math.pow(10, digitCount - 2))
 	}
-	let roundPoint
-	for (const point of ROUND_POINTS) {
-		if (n > point.threshold) {
-			roundPoint = point
-		} else {
-			break
-		}
-	}
-	if (roundPoint) {
-		const remainder = n % roundPoint.adjustment
-		if (remainder) {
+	if (n > 5) {
+		const remainder = n % 10
+		if (remainder / n < 0.2) {
 			n -= remainder
+		} else {
+			if (n % 2) {
+				n--
+			}
 		}
 	}
 	return n * factor
