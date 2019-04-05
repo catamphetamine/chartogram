@@ -39,4 +39,5 @@ npm-debug.log
 
 # Demo.
 /bundle/index.html
+/bundle/index-react.html
 /bundle/style.css

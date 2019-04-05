@@ -2,7 +2,7 @@
 
 import React from 'react'
 import PropTypes from 'prop-types'
-import chartogram from './index'
+import chartogram from '../index'
 
 export default class Chartogram extends React.Component {
   static propTypes = {

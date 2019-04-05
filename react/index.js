@@ -1,1 +1,1 @@
-export { default } from '../modules/React'
+export { default } from '../modules/react/Chartogram'
