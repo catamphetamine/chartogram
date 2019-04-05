@@ -2,6 +2,8 @@
 
 Charts in JS with no dependencies.
 
+Also includes a [React](#react) component for those who're using React.
+
 [DEMO](https://catamphetamine.github.io/chartogram)
 
 Originally created as part of [Telegram Charts Contest](https://t.me/contest/6).
@@ -39,6 +41,7 @@ Chart data must have shape:
   y: {
     id: string,
     name: string,
+    color: string,
     points: Number[]
   }[]
 }
@@ -61,6 +64,7 @@ Example:
     {
       id: 'y1',
       name: 'Temperature',
+      color: '#cc0000',
       points: [
         60,
         69,
@@ -70,6 +74,7 @@ Example:
     {
       id: 'y2',
       name: 'CPU load',
+      color: '#00aa00',
       points: [
         95,
         98,
@@ -111,38 +116,17 @@ npm install chartogram --save
 
 ```js
 import React from 'react'
-import PropTypes from 'prop-types'
-import chartogram from 'chartogram'
+import Chartogram from 'chartogram/react'
 import 'chartogram/style.css'
 
-class Chartogram extends React.Component {
-  static propTypes = {
-    data: PropTypes.shape({
-      x: PropTypes.shape({
-        points: PropTypes.arrayOf(PropTypes.number).isRequired
-      }).isRequired,
-      y: PropTypes.arrayOf(PropTypes.shape({
-        id: PropTypes.string.isRequired,
-        name: PropTypes.string.isRequired,
-        points: PropTypes.arrayOf(PropTypes.number).isRequired
-      })).isRequired
-    }).isRequired,
-    title: PropTypes.string.isRequired
-  }
-
-  node = React.createRef()
-
-  componentDidMount() {
-    const { data, title } = this.props
-    this.cleanUp = chartogram(this.node.current, data, title)
-  }
-
-  componentWillUnmount() {
-    this.cleanUp
-  }
-
+export default class Page extends React.Component {
   render() {
-    return <section ref={this.node}/>
+    return (
+      <Chartogram
+        data={data}
+        title={title}
+        options={options}/>
+    )
   }
 }
 ```
