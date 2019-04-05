@@ -187,7 +187,13 @@ export default class Timeline {
 		const onDrag = (x) => {
 			x -= deltaX
 			x = Math.max(Math.min(x, maxX), minX)
-			const ratio = (x - timelineCoordinates.left) / timelineCoordinates.width
+			let ratio = (x - timelineCoordinates.left) / timelineCoordinates.width
+			// Due to CSS em -> px rounding precision `ratio` may
+			// sometimes be out of bounds on the edges of the timeline.
+			// For example, for the right timeline window handle
+			// its width may be "6.39844" but the collapsed timeline window
+			// width may be "12.796875" which is "6.3984375" x2.
+			ratio = Math.min(Math.max(ratio, 0), 1)
 			if (side === 'left') {
 				this.updateBounds(ratio, this.props.toRatio)
 			} else {
