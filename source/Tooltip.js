@@ -223,12 +223,12 @@ export default class Tooltip {
 	}
 
 	updateTooltipYValues(xIndex) {
-		const { y } = this.props
+		const { y, formatY } = this.props
 		const tooltipValues = this.tooltip.childNodes[1]
 		let i = 0
 		for (const { isShown, points, name } of y) {
 			if (isShown) {
-				tooltipValues.childNodes[i].childNodes[0].textContent = points[xIndex]
+				tooltipValues.childNodes[i].childNodes[0].textContent = formatY(points[xIndex])
 				tooltipValues.childNodes[i].childNodes[1].textContent = name
 				i++
 			}
