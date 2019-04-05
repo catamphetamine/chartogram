@@ -126,14 +126,14 @@ export default class Tooltip {
 		const { y } = this.props
 		// Create tooltip.
 		const tooltip = document.createElement('div')
-		tooltip.classList.add('chartogram__tooltip')
+		tooltip.setAttribute('class', 'chartogram__tooltip')
 		// Add tooltip title.
 		const tooltipDate = document.createElement('h1')
-		tooltipDate.classList.add('chartogram__tooltip-header')
+		tooltipDate.setAttribute('class', 'chartogram__tooltip-header')
 		tooltip.appendChild(tooltipDate)
 		// Add graph values.
 		const tooltipValues = document.createElement('ul')
-		tooltipValues.classList.add('chartogram__tooltip-values')
+		tooltipValues.setAttribute('class', 'chartogram__tooltip-values')
 		tooltip.appendChild(tooltipValues)
 		// Add graph values.
 		for (const { isShown, color } of y) {
@@ -170,7 +170,7 @@ export default class Tooltip {
 		for (const _y of y) {
 			if (_y.isShown) {
 				const point = document.createElement('div')
-				point.classList.add('chartogram__tooltip-point')
+				point.setAttribute('class', 'chartogram__tooltip-point')
 				point.style.color = _y.color
 				points.push(point)
 				pointsContainer.appendChild(point)

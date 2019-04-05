@@ -198,8 +198,13 @@ body {
 
 ## Browser compatibility
 
-Tested in Chrome, Firefox, Microsoft Edge and iOS Safari.
+Tested in Chrome, Firefox, Microsoft Edge, Internet Explorer 11 and iOS Safari.
 
-For some reason doesn't show the `.chartogram__canvas` SVG element when it's wrapped in `.chartogram__canvas-wrapper` in Internet Explorer.
+The styles use [CSS variables](https://caniuse.com/#feat=css-variables) which are supported in all browsers except Internet Explorer that would require using something like [PostCSS](https://postcss.org/) with a plugin like [`postcss-custom-properties`](https://github.com/postcss/postcss-custom-properties) or [`postcss-css-variables`](https://github.com/MadLittleMods/postcss-css-variables).
 
-The styles use [CSS variables](https://caniuse.com/#feat=css-variables) which work everywhere except Internet Explorer.
+Internet Explorer would also require the following polyfills:
+
+* [`Array.find`](https://babeljs.io/docs/en/babel-polyfill)
+* [`Array.findIndex`](https://babeljs.io/docs/en/babel-polyfill)
+* [`Math.log10`](https://babeljs.io/docs/en/babel-polyfill)
+* [`classList`](https://github.com/eligrey/classList.js/)

@@ -113,8 +113,9 @@ export default class Timeline {
 	renderGraph(x, y, color, opacity = 1) {
 		const graph = document.createElementNS(SVG_XMLNS, 'polyline')
 		graph.setAttribute('stroke', color)
+		graph.setAttribute('fill', 'none')
 		this.updateGraph(graph, x, y, opacity)
-		graph.classList.add('chartogram__graph')
+		graph.setAttribute('class', 'chartogram__graph')
 		return graph
 	}
 
@@ -245,7 +246,7 @@ export default class Timeline {
 Timeline.INITIAL_MARKUP = `
 	<div class="chartogram__timeline">
 		<div class="chartogram__timeline-canvas-padding">
-			<svg class="chartogram__timeline-canvas" preserveAspectRatio="none"></svg>
+			<svg class="chartogram__timeline-canvas"></svg>
 		</div>
 		<div class="chartogram__timeline-overlay-left"></div>
 		<div class="chartogram__timeline-overlay-right"></div>

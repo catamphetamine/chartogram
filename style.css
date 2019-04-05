@@ -124,10 +124,13 @@
 	font-size: var(--chartogram-font-size);
 }
 
+/* "canvas wrapper" is only used to position tooltip points relative to canvas height.
+   If tooltip points were SVG <circle/>s and not <div/>s then they'd be inside the canvas
+   and `.chartogram__canvas-wrapper` would be removed. */
 .chartogram__canvas-wrapper {
 	position: relative;
+	/* `display: flex` removes the weird whitespace at the bottom. */
 	display: flex;
-	flex: 1;
 }
 
 .chartogram__canvas {
@@ -180,7 +183,7 @@
 .chartogram__y-wrapper {
 	position: absolute;
 	left: 0;
-	top: -1em;
+	bottom: 0;
 	height: calc(100% + 1em);
 }
 
@@ -188,7 +191,7 @@
 	position: absolute;
 	left: 0;
 	right: 0;
-	top: 100%;
+	bottom: calc(-1 * (1em + var(--chartogram-x-axis-labels-padding-top)));
 	display: flex;
 	justify-content: space-between;
 	padding-top: var(--chartogram-x-axis-labels-padding-top);
@@ -206,7 +209,6 @@
 	vector-effect: non-scaling-stroke;
 	stroke-linejoin: round;
 	stroke-linecap: round;
-	fill: none;
 }
 
 .chartogram__grid-line {
@@ -226,6 +228,7 @@
 
 .chartogram__tooltip {
 	position: absolute;
+	top: 0;
 	border-radius: 0.35em;
 	padding-top: 0.6em;
 	padding-bottom: 0.5em;
@@ -424,18 +427,31 @@
 }
 
 .chartogram__chart-toggler-check-mark {
-	transform: scale(0);
+	/*
+	Internet Explorer 11 doesn't support SVG transforms set via CSS.
+	https://stackoverflow.com/questions/21298338/css-transform-on-svg-elements-ie9
+	*/
+	/*transform: scale(0);*/
 }
 
 .chartogram__chart-toggler-check-circle {
-	transform: scale(1);
+	/*
+	Internet Explorer 11 doesn't support SVG transforms set via CSS.
+	https://stackoverflow.com/questions/21298338/css-transform-on-svg-elements-ie9
+	*/
+	/*transform: scale(1);*/
 	fill: var(--chartogram-background-color);
 }
 
+/*
+Internet Explorer 11 doesn't support SVG transforms set via CSS.
+https://stackoverflow.com/questions/21298338/css-transform-on-svg-elements-ie9
+*/
+/*
 .chartogram__chart-toggler--on .chartogram__chart-toggler-check-mark {
 	transform: scale(1);
 }
-
 .chartogram__chart-toggler--on .chartogram__chart-toggler-check-circle {
 	transform: scale(0);
 }
+*/

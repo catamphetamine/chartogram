@@ -292,7 +292,7 @@ export default class Chartogram {
 			y.isShown ? 1 : 0
 		)
 		this.transition.run()
-		return true
+		return y.isShown
 	}
 
 	onChangeBounds = (from, to) => {

@@ -160,7 +160,8 @@ export default class Charts {
 	renderGraph(graphPoints, color, opacity = 1) {
 		const graph = document.createElementNS(SVG_XMLNS, 'polyline')
 		graph.setAttribute('stroke', color)
-		graph.classList.add('chartogram__graph')
+		graph.setAttribute('fill', 'none')
+		graph.setAttribute('class', 'chartogram__graph')
 		this.updateGraph(graph, graphPoints, opacity)
 		return graph
 	}
@@ -168,7 +169,7 @@ export default class Charts {
 	renderGridLine(y) {
 		const { fixSvgCoordinate, minX, maxX, minY, maxY } = this.props
 		const line = document.createElementNS(SVG_XMLNS, 'line')
-		line.classList.add('chartogram__grid-line')
+		line.setAttribute('class', 'chartogram__grid-line')
 		line.setAttribute('x1', fixSvgCoordinate(this.mapX(minX)))
 		line.setAttribute('x2', fixSvgCoordinate(this.mapX(maxX)))
 		line.setAttribute('y1', fixSvgCoordinate(this.mapY(maxY - y)))
@@ -216,7 +217,7 @@ export default class Charts {
 			const tickMark = document.createElement('div')
 			this.yAxis.appendChild(tickMark)
 			const label = document.createElement('span')
-			label.classList.add('chartogram__y__label')
+			label.setAttribute('class', 'chartogram__y__label')
 			tickMark.appendChild(label)
 			i++
 		}
