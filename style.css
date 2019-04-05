@@ -40,32 +40,37 @@
 }
 
 .chartogram {
-	--chartogram-canvas-height: 22em;
-	--chartogram-background-color: white;
-	--chartogram-font-size: 16px;
-	--chartogram-stroke-width-bold: 3px;
-	--chartogram-stroke-width-normal: 2px;
-	--chartogram-stroke-width-light: 1px;
-	--chartogram-x-axis-labels-padding-top: 0.7em;
-	--chartogram-y-axis-labels-padding-bottom: 0.5em;
-	--chartogram-timeline-overlay-color: rgba(245,247,250,0.85);
-	--chartogram-timeline-window-border-color: rgba(0,106,146,0.12);
-	--chartogram-content-color: inherit;
-	--chartogram-content-color-lighter: #b0b0b0;
-	--chartogram-content-color-light: #dadada;
-	--chartogram-content-color-very-light: #f0f0f0;
-	--chartogram-button-active-color: #f5f5f5;
-	--chartogram-tooltip-background-color: var(--chartogram-background-color);
-	--chartogram-night-mode-transition-duration: 300ms;
 
-	/* Prevents text selection when clicking and dragging the timeline window. */
-	-webkit-user-select: none;
-	-khtml-user-select: none;
-	-moz-user-select: none;
-	-o-user-select: none;
-	user-select: none;
+/* Prevents text selection when clicking and dragging the timeline window. */
+-webkit-user-select: none;
+-moz-user-select: none;
+-o-user-select: none;
+-ms-user-select: none;
+    user-select: none;
 
-	font-size: var(--chartogram-font-size);
+font-size: 16px;
+
+font-size: var(--chartogram-font-size);
+}
+
+:root {
+--chartogram-canvas-height: 22em;
+--chartogram-background-color: white;
+--chartogram-font-size: 16px;
+--chartogram-stroke-width-bold: 3px;
+--chartogram-stroke-width-normal: 2px;
+--chartogram-stroke-width-light: 1px;
+--chartogram-x-axis-labels-padding-top: 0.7em;
+--chartogram-y-axis-labels-padding-bottom: 0.5em;
+--chartogram-timeline-overlay-color: rgba(245,247,250,0.85);
+--chartogram-timeline-window-border-color: rgba(0,106,146,0.12);
+--chartogram-content-color: inherit;
+--chartogram-content-color-lighter: #b0b0b0;
+--chartogram-content-color-light: #dadada;
+--chartogram-content-color-very-light: #f0f0f0;
+--chartogram-button-active-color: #f5f5f5;
+--chartogram-tooltip-background-color: var(--chartogram-background-color);
+--chartogram-night-mode-transition-duration: 300ms;
 }
 
 .chartogram--night-mode {
@@ -79,6 +84,8 @@
 	--chartogram-timeline-window-border-color: rgba(147,220,255,0.2);
 	--chartogram-tooltip-background-color: #293544;
 
+	color: inherit;
+
 	color: var(--chartogram-content-color);
 }
 
@@ -86,8 +93,10 @@
 	width: 100%;
 	height: 0.85em;
 	margin-bottom: calc(0.85em + 1em);
+	transition: all 300ms;
 	transition: all var(--chartogram-night-mode-transition-duration);
 	/* Gradients don't support transitions. */
+	background-color: white;
 	background-color: var(--chartogram-background-color);
 	/* Using `rgba(255,255,255,0)` instead of `transparent` to work around Safari bug. */
 	/*background-image: linear-gradient(var(--chartogram-background-color), var(--chartogram-background-color-transparent));*/
@@ -103,17 +112,23 @@
 	margin: 0;
 	padding-left: 0.25em;
 	font-size: 145%;
+	transition: all 300ms;
 	transition: all var(--chartogram-night-mode-transition-duration);
 }
 
 .chartogram__plan-with-axes {
 	overflow: hidden;
 	/* Side padding added to prevent graph (and tooltip points) cutting and sides. */
+	margin-left: calc(-1 * 3px * 5 / 2);
 	margin-left: calc(-1 * var(--chartogram-stroke-width-bold) * 5 / 2);
+	margin-right: calc(-1 * 3px * 5 / 2);
 	margin-right: calc(-1 * var(--chartogram-stroke-width-bold) * 5 / 2);
+	padding-left: calc(3px * 5 / 2);
 	padding-left: calc(var(--chartogram-stroke-width-bold) * 5 / 2);
+	padding-right: calc(3px * 5 / 2);
 	padding-right: calc(var(--chartogram-stroke-width-bold) * 5 / 2);
 	/* Padding bottom added for the X axis labels. */
+	padding-bottom: calc(0.7em + 16px);
 	padding-bottom: calc(var(--chartogram-x-axis-labels-padding-top) + var(--chartogram-font-size));
 }
 
@@ -121,17 +136,22 @@
 	position: relative;
 	display: flex;
 	flex-direction: column;
+	font-size: 16px;
 	font-size: var(--chartogram-font-size);
 }
 
+/* "canvas wrapper" is only used to position tooltip points relative to canvas height.
+   If tooltip points were SVG <circle/>s and not <div/>s then they'd be inside the canvas
+   and `.chartogram__canvas-wrapper` would be removed. */
 .chartogram__canvas-wrapper {
 	position: relative;
+	/* `display: flex` removes the weird whitespace at the bottom. */
 	display: flex;
-	flex: 1;
 }
 
 .chartogram__canvas {
 	width: 100%;
+	height: 22em;
 	height: var(--chartogram-canvas-height);
 	/* Don't crop graphs on canvas edges. */
 	/* Also don't crop the bottom-most grid line. */
@@ -145,13 +165,16 @@
 }
 
 .chartogram__x, .chartogram__y {
+	color: #b0b0b0;
 	color: var(--chartogram-content-color-lighter);
+	transition: color 300ms;
 	transition: color var(--chartogram-night-mode-transition-duration);
 }
 
 .chartogram__y {
 	position: absolute;
 	left: 0;
+	bottom: 0.5em;
 	bottom: var(--chartogram-y-axis-labels-padding-bottom);
 	height: 100%;
 	line-height: 1em;
@@ -163,24 +186,36 @@
 }
 
 .chartogram__y__label {
+	margin-left: calc(-1 * 16px / 6);
 	margin-left: calc(-1 * var(--chartogram-font-size) / 6);
+	margin-right: calc(-1 * 16px / 6);
 	margin-right: calc(-1 * var(--chartogram-font-size) / 6);
+	margin-top: calc(-1 * 16px / 12);
 	margin-top: calc(-1 * var(--chartogram-font-size) / 12);
+	margin-bottom: calc(-1 * 16px / 12);
 	margin-bottom: calc(-1 * var(--chartogram-font-size) / 12);
+	padding-left: calc(16px / 6);
 	padding-left: calc(var(--chartogram-font-size) / 6);
+	padding-right: calc(16px / 6);
 	padding-right: calc(var(--chartogram-font-size) / 6);
+	padding-top: calc(16px / 12);
 	padding-top: calc(var(--chartogram-font-size) / 12);
+	padding-bottom: calc(16px / 12);
 	padding-bottom: calc(var(--chartogram-font-size) / 12);
+	border-top-right-radius: calc(16px / 3);
 	border-top-right-radius: calc(var(--chartogram-font-size) / 3);
+	border-bottom-right-radius: calc(16px / 3);
 	border-bottom-right-radius: calc(var(--chartogram-font-size) / 3);
+	background-color: white;
 	background-color: var(--chartogram-background-color);
+	transition: background-color 300ms;
 	transition: background-color var(--chartogram-night-mode-transition-duration);
 }
 
 .chartogram__y-wrapper {
 	position: absolute;
 	left: 0;
-	top: -1em;
+	bottom: 0;
 	height: calc(100% + 1em);
 }
 
@@ -188,9 +223,11 @@
 	position: absolute;
 	left: 0;
 	right: 0;
-	top: 100%;
+	bottom: calc(-1 * (1em + 0.7em));
+	bottom: calc(-1 * (1em + var(--chartogram-x-axis-labels-padding-top)));
 	display: flex;
 	justify-content: space-between;
+	padding-top: 0.7em;
 	padding-top: var(--chartogram-x-axis-labels-padding-top);
 	padding-left: 0.7em;
 	padding-right: 0.7em;
@@ -198,6 +235,7 @@
 }
 
 .chartogram__graph {
+	stroke-width: 3px;
 	stroke-width: var(--chartogram-stroke-width-bold);
 	/* `vector-effect` fixes `stroke-width` to be in screen pixels. */
 	/* (instead of <svg/> `viewBox` units) */
@@ -206,12 +244,14 @@
 	vector-effect: non-scaling-stroke;
 	stroke-linejoin: round;
 	stroke-linecap: round;
-	fill: none;
 }
 
 .chartogram__grid-line {
+	stroke: #f0f0f0;
 	stroke: var(--chartogram-content-color-very-light);
+	transition: stroke 300ms;
 	transition: stroke var(--chartogram-night-mode-transition-duration);
+	stroke-width: 1px;
 	stroke-width: var(--chartogram-stroke-width-light);
 	/* `vector-effect` fixes `stroke-width` to be in screen pixels. */
 	/* (instead of <svg/> `viewBox` units) */
@@ -221,17 +261,20 @@
 }
 
 .chartogram__grid-line:first-child {
+	stroke: #f0f0f0;
 	stroke: var(--chartogram-content-color-very-light);
 }
 
 .chartogram__tooltip {
 	position: absolute;
+	top: 0;
 	border-radius: 0.35em;
 	padding-top: 0.6em;
 	padding-bottom: 0.5em;
 	padding-left: 0.85em;
 	padding-right: 0.85em;
 	box-shadow: 0 1px 0.2em rgba(0,0,0,0.18);
+	background-color: white;
 	background-color: var(--chartogram-tooltip-background-color);
 	z-index: 1;
 	/* So that hovering it doesn't result in 'pointerleave' event on canvas. */
@@ -274,18 +317,25 @@
 
 .chartogram__tooltip-point {
 	position: absolute;
+	width: calc(3px * 3);
 	width: calc(var(--chartogram-stroke-width-bold) * 3);
+	height: calc(3px * 3);
 	height: calc(var(--chartogram-stroke-width-bold) * 3);
+	box-shadow: 0 0 0 3px currentColor;
 	box-shadow: 0 0 0 var(--chartogram-stroke-width-bold) currentColor;
 	border-radius: 50%;
+	background-color: white;
 	background-color: var(--chartogram-background-color);
-	transform: translateX(-50%) translateY(50%);
+	-webkit-transform: translateX(-50%) translateY(50%);
+	        transform: translateX(-50%) translateY(50%);
 	/* So that hovering it doesn't result in 'pointerleave' event on canvas. */
 	pointer-events: none;
 }
 
 .chartogram__tooltip-line {
+	stroke: #dadada;
 	stroke: var(--chartogram-content-color-light);
+	stroke-width: 1px;
 	stroke-width: var(--chartogram-stroke-width-light);
 	/* `vector-effect` fixes `stroke-width` to be in screen pixels. */
 	/* (instead of <svg/> `viewBox` units) */
@@ -312,7 +362,9 @@
 	left: 0;
 	right: 0;
 	height: 100%;
+	background-color: rgba(245,247,250,0.85);
 	background-color: var(--chartogram-timeline-overlay-color);
+	transition: background-color 300ms;
 	transition: background-color var(--chartogram-night-mode-transition-duration);
 }
 
@@ -321,7 +373,9 @@
 	left: 0;
 	right: 0;
 	height: 100%;
+	transition: border-color 300ms;
 	transition: border-color var(--chartogram-night-mode-transition-duration);
+	border: 1px solid rgba(0,106,146,0.12);
 	border: 1px solid var(--chartogram-timeline-window-border-color);
 	border-left-width: 0.4em;
 	border-right-width: 0.4em;
@@ -341,6 +395,7 @@
 	padding-right: 0.6em;
 	height: 100%;
 	cursor: ew-resize;
+	transition: background-color 300ms;
 	transition: background-color var(--chartogram-night-mode-transition-duration);
 }
 
@@ -353,10 +408,12 @@
 }
 
 .chartogram__timeline-window__drag {
+	cursor: -webkit-grab;
 	cursor: grab;
 }
 
 .chartogram__timeline-window__drag:active {
+	cursor: -webkit-grabbing;
 	cursor: grabbing;
 }
 
@@ -379,6 +436,7 @@
 }
 
 .chartogram__timeline-canvas .chartogram__graph {
+	stroke-width: 2px;
 	stroke-width: var(--chartogram-stroke-width-normal);
 }
 
@@ -397,9 +455,11 @@
 	padding-right: 0.8em;
 	margin-right: 1em;
 	border-radius: 1.1em;
+	box-shadow: 0 0 2px #b0b0b0;
 	box-shadow: 0 0 2px var(--chartogram-content-color-lighter);
 	font-family: inherit;
 	font-size: 140%;
+	transition: color 300ms, box-shadow 300ms;
 	transition: color var(--chartogram-night-mode-transition-duration), box-shadow var(--chartogram-night-mode-transition-duration);;
 }
 
@@ -408,6 +468,7 @@
 }
 
 .chartogram__chart-toggler:active {
+	background-color: #f5f5f5;
 	background-color: var(--chartogram-button-active-color);
 }
 
@@ -419,23 +480,43 @@
 
 .chartogram__chart-toggler-check-mark,
 .chartogram__chart-toggler-check-circle {
+	transition: fill 300ms, -webkit-transform 150ms;
+	transition: transform 150ms, fill 300ms;
+	transition: transform 150ms, fill 300ms, -webkit-transform 150ms;
+	transition: fill var(--chartogram-night-mode-transition-duration), -webkit-transform 150ms;
 	transition: transform 150ms, fill var(--chartogram-night-mode-transition-duration);
-	transform-origin: center center;
+	transition: transform 150ms, fill var(--chartogram-night-mode-transition-duration), -webkit-transform 150ms;
+	-webkit-transform-origin: center center;
+	        transform-origin: center center;
 }
 
 .chartogram__chart-toggler-check-mark {
-	transform: scale(0);
+	/*
+	Internet Explorer 11 doesn't support SVG transforms set via CSS.
+	https://stackoverflow.com/questions/21298338/css-transform-on-svg-elements-ie9
+	*/
+	/*transform: scale(0);*/
 }
 
 .chartogram__chart-toggler-check-circle {
-	transform: scale(1);
+	/*
+	Internet Explorer 11 doesn't support SVG transforms set via CSS.
+	https://stackoverflow.com/questions/21298338/css-transform-on-svg-elements-ie9
+	*/
+	/*transform: scale(1);*/
+	fill: white;
 	fill: var(--chartogram-background-color);
 }
 
+/*
+Internet Explorer 11 doesn't support SVG transforms set via CSS.
+https://stackoverflow.com/questions/21298338/css-transform-on-svg-elements-ie9
+*/
+/*
 .chartogram__chart-toggler--on .chartogram__chart-toggler-check-mark {
 	transform: scale(1);
 }
-
 .chartogram__chart-toggler--on .chartogram__chart-toggler-check-circle {
 	transform: scale(0);
 }
+*/
