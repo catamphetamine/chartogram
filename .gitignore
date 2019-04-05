@@ -26,3 +26,6 @@ npm-debug.log
 # webpack build target folder
 /modules/
 /commonjs/
+
+# Demo.
+/bundle/
