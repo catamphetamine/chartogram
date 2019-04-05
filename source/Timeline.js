@@ -55,6 +55,9 @@ export default class Timeline {
 	componentWillUnmount() {
 		// Remove window resize event listener.
 		window.removeEventListener('resize', this.onResizeThrottled)
+		if (this.updateBoundsTimeout) {
+			cancelAnimationFrame(this.updateBoundsTimeout)
+		}
 	}
 
 	onResize = (event) => {
@@ -158,6 +161,21 @@ export default class Timeline {
 	}
 
 	updateBounds(from, to) {
+		this.updateBoundsFrom = from
+		this.updateBoundsTo = to
+		if (!this.updateBoundsTimeout) {
+			// Schedule bounds update.
+			this.updateBoundsTimeout = requestAnimationFrame(this._updateBounds)
+		}
+	}
+
+	_updateBounds = () => {
+		this.updateBoundsTimeout = undefined
+		const from = this.updateBoundsFrom
+		const to = this.updateBoundsTo
+		this.updateBoundsFrom = undefined
+		this.updateBoundsTo = undefined
+		// Update bounds.
 		this.props.onChangeBounds(from, to)
 		this.props.fromRatio = from
 		this.props.toRatio = to
