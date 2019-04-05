@@ -154,12 +154,12 @@ Add `chartogram--night-mode` CSS class to the chart `<section/>` to switch to Ni
 ## Options
 
 * `formatX(value: number, { long: boolean })` — Formats X axis labels. `long` option is for the tooltip. Uses `Intl.DateTimeFormat` by default.
-* `formatY(value: number)` — Formats Y axis labels (including tooltip). Is `Math.round()` by default.
+* `formatY(value: number)` — Formats Y axis labels (including tooltip). Uses `Intl.NumberFormat` by default.
 * `locale: string` — Is used to format dates (the default system locale is used if none supplied).
 * `transitionDuration: number` — The maximum transition duration (in milliseconds).
 * `transitionEasing: string` — Is `easeOutQuad` by default.
 * `yAxisTickMarksCount: number` — Y axis tick marks count.
-* `yAxisPrecision: number` — Y axis tick mark labels rounding precision (if using fractional Y points). Is `0` by default.
+* `yAxisPrecision: number` — Y axis tick mark labels rounding precision: the number of fraction digits to use when formatting Y axis labels. Is `0` by default.
 * `xAxisTickMarkWidth: number` — (in pixels) Is used to calculate the count of X axis tick marks based on canvas width (in pixels).
 * `canvasWidth: number` — SVG `viewBox` width (not pixels).
 * `precision: number` — SVG coordinates rounding precision.

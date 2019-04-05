@@ -364,16 +364,17 @@ export default class Chartogram {
 		}
 		if (!this.numberFormat) {
 			this.numberFormat = new Intl.NumberFormat(locale, {
-				minimumFractionDigits: yAxisPrecision
+				minimumFractionDigits: yAxisPrecision,
+				maximumFractionDigits: yAxisPrecision
 			})
 		}
 		const precisionFactor = yAxisPrecision && Math.pow(10, yAxisPrecision)
 		if (precisionFactor) {
-			value /= precisionFactor
+			value *= precisionFactor
 		}
 		value = Math.round(value)
 		if (precisionFactor) {
-			value *= precisionFactor
+			value /= precisionFactor
 		}
 		return this.numberFormat.format(value)
 	}
