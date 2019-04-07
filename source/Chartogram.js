@@ -245,6 +245,8 @@ export default class Chartogram {
 				maxYGlobal = Math.max(maxYGlobal, _y.max)
 			}
 		}
+		const maxYGaugeMark = roundNumber(maxY, yAxisTickMarksCount - 1, yAxisPrecision)
+		maxY = Math.max(maxY, maxYGaugeMark)
 		// Min Y is always 0 by design.
 		minYGlobal = 0
 		return {
@@ -252,7 +254,7 @@ export default class Chartogram {
 			maxY,
 			minYGlobal,
 			maxYGlobal,
-			maxYGaugeMark: roundNumber(maxY * 0.985, yAxisTickMarksCount - 1, yAxisPrecision)
+			maxYGaugeMark
 		}
 	}
 

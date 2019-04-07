@@ -13,7 +13,7 @@ export function roundNumber(n, count, precision) {
 	if (precisionFactor) {
 		n *= precisionFactor
 	}
-	let delta = Math.floor(n / count)
+	let delta = n / count
 	delta = round(delta)
 	if (precisionFactor) {
 		delta /= precisionFactor
@@ -21,24 +21,48 @@ export function roundNumber(n, count, precision) {
 	return delta * count
 }
 
-function round(n) {
-	const digitCount = getDigitCount(n)
+function round(x, maxDigits = 2) {
 	let factor = 1
-	if (digitCount > 2) {
-		factor = Math.pow(10, digitCount - 2)
-		n = Math.floor(n / Math.pow(10, digitCount - 2))
+	const digitCount = getDigitCount(x)
+	if (digitCount > maxDigits) {
+		factor = Math.pow(10, digitCount - maxDigits)
+		x /= factor
 	}
-	if (n > 5) {
-		const remainder = n % 10
-		if (remainder / n < 0.2) {
-			n -= remainder
-		} else {
-			if (n % 2) {
-				n--
-			}
+	return roundDecimal(x) * factor
+}
+
+const ROUND_DECIMAL_HIGH_FACTOR = 1.08
+const ROUND_DECIMAL_LOW_FACTOR = 1.06
+
+function roundDecimal(x) {
+	x = Math.round(x)
+	let rounded = roundDecimalBy(x, 10)
+	if (rounded !== x) {
+		return rounded
+	}
+	rounded = roundDecimalBy(x, 5)
+	if (rounded !== x) {
+		return rounded
+	}
+	rounded = roundDecimalBy(x, 2)
+	if (rounded !== x) {
+		return rounded
+	}
+	return x
+}
+
+function roundDecimalBy(x, factor) {
+	const remainder = x % factor
+	if (remainder < factor / 2) {
+		if (x > factor && x / (x - remainder) < ROUND_DECIMAL_LOW_FACTOR) {
+			x -= remainder
+		}
+	} else {
+		if ((factor - remainder) / x < ROUND_DECIMAL_HIGH_FACTOR - 1) {
+			x += factor - remainder
 		}
 	}
-	return n * factor
+	return x
 }
 
 export function divideInterval(min, max, GAUGE_TICK_MARKS_COUNT) {
