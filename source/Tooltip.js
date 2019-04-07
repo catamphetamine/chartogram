@@ -240,10 +240,10 @@ export default class Tooltip {
 			this.mountLine()
 		}
 		const { canvasWidth, aspectRatio, fixSvgCoordinate, mapX } = this.props
-		this.line.setAttributeNS(null, 'x1', fixSvgCoordinate(mapX(x)))
-		this.line.setAttributeNS(null, 'x2', fixSvgCoordinate(mapX(x)))
-		this.line.setAttributeNS(null, 'y1', 0)
-		this.line.setAttributeNS(null, 'y2', fixSvgCoordinate(canvasWidth / aspectRatio))
+		this.line.setAttribute('x1', fixSvgCoordinate(mapX(x)))
+		this.line.setAttribute('x2', fixSvgCoordinate(mapX(x)))
+		this.line.setAttribute('y1', 0)
+		this.line.setAttribute('y2', '100%')
 	}
 
 	updatePointPositions = (xIndex, xRatio) => {

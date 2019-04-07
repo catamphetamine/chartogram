@@ -167,11 +167,11 @@ export default class Charts {
 	}
 
 	renderGridLine(y) {
-		const { fixSvgCoordinate, minX, maxX, minY, maxY } = this.props
+		const { fixSvgCoordinate, minY, maxY } = this.props
 		const line = document.createElementNS(SVG_XMLNS, 'line')
 		line.setAttribute('class', 'chartogram__grid-line')
-		line.setAttribute('x1', fixSvgCoordinate(this.mapX(minX)))
-		line.setAttribute('x2', fixSvgCoordinate(this.mapX(maxX)))
+		line.setAttribute('x1', 0)
+		line.setAttribute('x2', '100%')
 		line.setAttribute('y1', fixSvgCoordinate(this.mapY(maxY - y)))
 		line.setAttribute('y2', fixSvgCoordinate(this.mapY(maxY - y)))
 		return line
