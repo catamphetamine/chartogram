@@ -69,6 +69,12 @@ export default class Togglers {
 		// If the graph wasn't toggled.
 		// (for example, when it's the only graph being displayed)
 		if (state === undefined) {
+			if (!toggler.classList.contains(ACTION_DISALLOWED_CSS_CLASS)) {
+				toggler.classList.add(ACTION_DISALLOWED_CSS_CLASS)
+				setTimeout(() => {
+					toggler.classList.remove(ACTION_DISALLOWED_CSS_CLASS)
+				}, 820)
+			}
 			return
 		}
 		// toggler.classList.toggle('chartogram__chart-toggler--on')
@@ -87,3 +93,5 @@ export default class Togglers {
 Togglers.INITIAL_MARKUP = `
 	<div class="chartogram__chart-togglers"></div>
 `
+
+const ACTION_DISALLOWED_CSS_CLASS = 'chartogram__chart-toggler--action-disallowed'
