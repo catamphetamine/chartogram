@@ -472,6 +472,49 @@ font-size: var(--chartogram-font-size);
 	background-color: var(--chartogram-button-active-color);
 }
 
+.chartogram__chart-toggler--action-disallowed {
+	-webkit-animation: action-disallowed-shake 0.82s cubic-bezier(0.19, 1, 0.22, 1);
+	        animation: action-disallowed-shake 0.82s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+@-webkit-keyframes action-disallowed-shake {
+  10%, 90% {
+    -webkit-transform: translateX(-1px);
+            transform: translateX(-1px);
+  }
+  20%, 80% {
+    -webkit-transform: translateX(2px);
+            transform: translateX(2px);
+  }
+  30%, 50%, 70% {
+    -webkit-transform: translateX(-4px);
+            transform: translateX(-4px);
+  }
+  40%, 60% {
+    -webkit-transform: translateX(4px);
+            transform: translateX(4px);
+  }
+}
+
+@keyframes action-disallowed-shake {
+  10%, 90% {
+    -webkit-transform: translateX(-1px);
+            transform: translateX(-1px);
+  }
+  20%, 80% {
+    -webkit-transform: translateX(2px);
+            transform: translateX(2px);
+  }
+  30%, 50%, 70% {
+    -webkit-transform: translateX(-4px);
+            transform: translateX(-4px);
+  }
+  40%, 60% {
+    -webkit-transform: translateX(4px);
+            transform: translateX(4px);
+  }
+}
+
 .chartogram__chart-toggler-check {
 	width: 1.4em;
 	height: 1.4em;
